@@ -1,6 +1,6 @@
 import { createServer as createTcpServer, Server, Socket } from "node:net";
-import { computeAcceptKey, parseFrame, createFrame, OPCODE } from "./websocket";
-import type { RpcMessage } from "./tools";
+import { computeAcceptKey, parseFrame, createFrame, OPCODE } from "./websocket.ts";
+import type { RpcMessage } from "./tools.ts";
 
 interface Client {
   socket: Socket;
