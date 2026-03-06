@@ -54,6 +54,7 @@ export function cleanStaleLockFiles(): void {
     try {
       const data = JSON.parse(readFileSync(lockPath, "utf-8"));
       if (data.ideName !== "Obsidian") continue;
+      if (data.pid === process.pid) throw new Error("own stale lock");
       process.kill(data.pid, 0); // throws if dead
     } catch {
       try {
