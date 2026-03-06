@@ -6,6 +6,7 @@
     "lib": ["ES2020", "DOM"],
     "strict": true,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "skipLibCheck": true
   },
   "include": ["src/**/*.ts"],

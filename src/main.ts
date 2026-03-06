@@ -1,13 +1,13 @@
 import { Plugin, MarkdownView, FileSystemAdapter } from "obsidian";
 import { EditorView, ViewUpdate } from "@codemirror/view";
 import { randomUUID } from "node:crypto";
-import { createBridgeServer, BridgeServer } from "./server";
-import { createLockFile, removeLockFile, cleanStaleLockFiles } from "./lock";
+import { createBridgeServer, BridgeServer } from "./server.ts";
+import { createLockFile, removeLockFile, cleanStaleLockFiles } from "./lock.ts";
 import {
   handleRpcMessage,
   getSelectionData,
   SelectionData,
-} from "./tools";
+} from "./tools.ts";
 
 export default class ObsidianClaudeBridge extends Plugin {
   private server: BridgeServer | null = null;
