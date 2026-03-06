@@ -132,6 +132,30 @@ describe("bridge server", () => {
     assert.strictEqual(rpcResponse.result.protocolVersion, "2025-03-26");
   });
 
+  it("broadcasts to multiple clients", async () => {
+    server = createBridgeServer({
+      authToken: AUTH_TOKEN,
+      onMessage: (msg) => ({ jsonrpc: "2.0", id: msg.id, result: {} }),
+    });
+
+    const port = await server.start();
+    const { socket: s1 } = await connectWebSocket(port, AUTH_TOKEN);
+    const { socket: s2 } = await connectWebSocket(port, AUTH_TOKEN);
+    sockets.push(s1, s2);
+
+    const p1 = waitForFrame(s1);
+    const p2 = waitForFrame(s2);
+    server.broadcast({ jsonrpc: "2.0", method: "test" });
+
+    const [f1, f2] = await Promise.all([p1, p2]);
+    assert.ok(f1);
+    assert.ok(f2);
+    const d1 = JSON.parse(f1.payload.toString());
+    const d2 = JSON.parse(f2.payload.toString());
+    assert.strictEqual(d1.method, "test");
+    assert.strictEqual(d2.method, "test");
+  });
+
   it("rejects connection with wrong auth token", async () => {
     server = createBridgeServer({
       authToken: AUTH_TOKEN,
