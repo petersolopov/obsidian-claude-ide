@@ -1,0 +1,9 @@
+{
+  "id": "obsidian-claude-bridge",
+  "name": "Claude Bridge",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "WebSocket server implementing IDE protocol for Claude Code",
+  "author": "petersolopov",
+  "isDesktopOnly": true
+}
