@@ -11,7 +11,7 @@ interface Client {
   alive: boolean;
 }
 
-export interface BridgeServer {
+export interface IdeServer {
   start(): Promise<number>;
   stop(): void;
   broadcast(data: object): void;
@@ -22,7 +22,7 @@ interface ServerOptions {
   onMessage(msg: RpcMessage): Record<string, unknown>;
 }
 
-export function createBridgeServer(options: ServerOptions): BridgeServer {
+export function createIdeServer(options: ServerOptions): IdeServer {
   const clients = new Set<Client>();
   let server: Server | null = null;
   let pingInterval: ReturnType<typeof setInterval> | null = null;

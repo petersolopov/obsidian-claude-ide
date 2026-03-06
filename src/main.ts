@@ -1,7 +1,7 @@
 import { Plugin, MarkdownView, FileSystemAdapter } from "obsidian";
 import { EditorView, ViewUpdate } from "@codemirror/view";
 import { randomUUID } from "node:crypto";
-import { createBridgeServer, BridgeServer } from "./server.ts";
+import { createIdeServer, IdeServer } from "./server.ts";
 import { createLockFile, removeLockFile, cleanStaleLockFiles } from "./lock.ts";
 import {
   handleRpcMessage,
@@ -9,8 +9,8 @@ import {
   SelectionData,
 } from "./tools.ts";
 
-export default class ObsidianClaudeBridge extends Plugin {
-  private server: BridgeServer | null = null;
+export default class ObsidianIdePlugin extends Plugin {
+  private server: IdeServer | null = null;
   private port = 0;
   private latestSelection: SelectionData | null = null;
   private prevState: string | null = null;
@@ -24,7 +24,7 @@ export default class ObsidianClaudeBridge extends Plugin {
       this.app.vault.adapter as FileSystemAdapter
     ).getBasePath();
 
-    this.server = createBridgeServer({
+    this.server = createIdeServer({
       authToken,
       onMessage: (msg) =>
         handleRpcMessage(msg, {

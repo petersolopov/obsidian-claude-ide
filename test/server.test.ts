@@ -2,8 +2,8 @@ import { describe, it, afterEach } from "node:test";
 import assert from "node:assert";
 import { connect, Socket } from "node:net";
 import { randomBytes } from "node:crypto";
-import { createBridgeServer } from "../src/server.ts";
-import type { BridgeServer } from "../src/server.ts";
+import { createIdeServer } from "../src/server.ts";
+import type { IdeServer } from "../src/server.ts";
 import { parseFrame, OPCODE } from "../src/websocket.ts";
 
 const AUTH_TOKEN = "test-token-123";
@@ -84,8 +84,8 @@ function waitForFrame(socket: Socket): Promise<ReturnType<typeof parseFrame>> {
   });
 }
 
-describe("bridge server", () => {
-  let server: BridgeServer;
+describe("ide server", () => {
+  let server: IdeServer;
   let sockets: Socket[] = [];
 
   afterEach(() => {
@@ -97,7 +97,7 @@ describe("bridge server", () => {
   });
 
   it("accepts WebSocket connection and responds to initialize RPC", async () => {
-    server = createBridgeServer({
+    server = createIdeServer({
       authToken: AUTH_TOKEN,
       onMessage(msg) {
         return {
@@ -133,7 +133,7 @@ describe("bridge server", () => {
   });
 
   it("broadcasts to multiple clients", async () => {
-    server = createBridgeServer({
+    server = createIdeServer({
       authToken: AUTH_TOKEN,
       onMessage: (msg) => ({ jsonrpc: "2.0", id: msg.id, result: {} }),
     });
@@ -157,7 +157,7 @@ describe("bridge server", () => {
   });
 
   it("removes client after close frame", async () => {
-    server = createBridgeServer({
+    server = createIdeServer({
       authToken: AUTH_TOKEN,
       onMessage: (msg) => ({ jsonrpc: "2.0", id: msg.id, result: {} }),
     });
@@ -180,7 +180,7 @@ describe("bridge server", () => {
   });
 
   it("returns RPC parse error for invalid JSON", async () => {
-    server = createBridgeServer({
+    server = createIdeServer({
       authToken: AUTH_TOKEN,
       onMessage: () => ({ jsonrpc: "2.0", id: null, result: {} }),
     });
@@ -202,7 +202,7 @@ describe("bridge server", () => {
   });
 
   it("responds to ping with pong", async () => {
-    server = createBridgeServer({
+    server = createIdeServer({
       authToken: AUTH_TOKEN,
       onMessage: () => ({}),
     });
@@ -220,7 +220,7 @@ describe("bridge server", () => {
   });
 
   it("rejects connection with wrong auth token", async () => {
-    server = createBridgeServer({
+    server = createIdeServer({
       authToken: AUTH_TOKEN,
       onMessage() {
         return {};
