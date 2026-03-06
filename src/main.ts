@@ -1,11 +1,114 @@
-import { Plugin } from "obsidian";
+import { Plugin, MarkdownView, FileSystemAdapter } from "obsidian";
+import { EditorView, ViewUpdate } from "@codemirror/view";
+import { randomUUID } from "node:crypto";
+import { createBridgeServer, BridgeServer } from "./server";
+import { createLockFile, removeLockFile, cleanStaleLockFiles } from "./lock";
+import {
+  handleRpcMessage,
+  getSelectionData,
+  SelectionData,
+} from "./tools";
 
 export default class ObsidianClaudeBridge extends Plugin {
+  private server: BridgeServer | null = null;
+  private port = 0;
+  private latestSelection: SelectionData | null = null;
+  private prevState: string | null = null;
+  private broadcastTimer: ReturnType<typeof setTimeout> | null = null;
+
   async onload() {
-    console.log("obsidian-claude-bridge: loaded");
+    cleanStaleLockFiles();
+
+    const authToken = randomUUID();
+    const basePath = (
+      this.app.vault.adapter as FileSystemAdapter
+    ).getBasePath();
+
+    this.server = createBridgeServer({
+      authToken,
+      onMessage: (msg) =>
+        handleRpcMessage(msg as Parameters<typeof handleRpcMessage>[0], {
+          app: this.app,
+          latestSelection: this.latestSelection,
+        }),
+    });
+
+    this.port = await this.server.start();
+
+    createLockFile({
+      port: this.port,
+      pid: process.pid,
+      workspaceFolders: [basePath],
+      authToken,
+    });
+
+    this.registerEvent(
+      this.app.workspace.on("active-leaf-change", () => {
+        this.scheduleBroadcast();
+      }),
+    );
+
+    this.registerEditorExtension(
+      EditorView.updateListener.of((update: ViewUpdate) => {
+        if (update.selectionSet || update.docChanged) {
+          this.scheduleBroadcast();
+        }
+      }),
+    );
+
+    console.log(
+      `obsidian-claude-bridge: listening on 127.0.0.1:${this.port}`,
+    );
   }
 
   onunload() {
-    console.log("obsidian-claude-bridge: unloaded");
+    if (this.broadcastTimer !== null) {
+      clearTimeout(this.broadcastTimer);
+    }
+    this.server?.stop();
+    if (this.port) {
+      removeLockFile(this.port);
+    }
+  }
+
+  private scheduleBroadcast() {
+    if (this.broadcastTimer !== null) {
+      clearTimeout(this.broadcastTimer);
+    }
+    this.broadcastTimer = setTimeout(() => {
+      this.broadcastTimer = null;
+      this.broadcastSelection();
+    }, 100);
+  }
+
+  private broadcastSelection() {
+    const data = getSelectionData(this.app);
+    if (!data) return;
+
+    this.latestSelection = data;
+
+    const stateKey = JSON.stringify({
+      filePath: data.filePath,
+      cursor: data.cursor,
+      selection: data.selection,
+    });
+
+    if (stateKey === this.prevState) return;
+    this.prevState = stateKey;
+
+    this.server?.broadcast({
+      jsonrpc: "2.0",
+      method: "selection_changed",
+      params: {
+        text: data.selection.text,
+        filePath: data.filePath,
+        fileUrl: "file://" + data.filePath,
+        selection: {
+          start: data.selection.start,
+          end: data.selection.end,
+          isEmpty: data.selection.isEmpty,
+        },
+      },
+    });
   }
 }
