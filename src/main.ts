@@ -28,7 +28,7 @@ export default class ObsidianClaudeBridge extends Plugin {
       authToken,
       debug: Boolean(process.env.CLAUDE_BRIDGE_DEBUG),
       onMessage: (msg) =>
-        handleRpcMessage(msg as Parameters<typeof handleRpcMessage>[0], {
+        handleRpcMessage(msg, {
           app: this.app,
           latestSelection: this.latestSelection,
         }),

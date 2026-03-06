@@ -90,8 +90,8 @@ export function getSelectionData(app: App): SelectionData | null {
     selection: {
       start: { line: from.line, character: from.ch },
       end: { line: to.line, character: to.ch },
-      isEmpty: !selectedText,
-      text: selectedText || "",
+      isEmpty: selectedText === "",
+      text: selectedText,
     },
   };
 }
@@ -129,14 +129,14 @@ function handleToolCall(
     case "getOpenEditors": {
       const basePath = getBasePath(ctx.app);
       const leaves = ctx.app.workspace.getLeavesOfType("markdown");
-      const activeLeaf = ctx.app.workspace.activeLeaf;
+      const activeView = ctx.app.workspace.getActiveViewOfType(MarkdownView);
       const tabs = leaves
         .filter((l) => (l.view as MarkdownView).file)
         .map((l) => {
           const file = (l.view as MarkdownView).file!;
           return {
             uri: "file://" + basePath + "/" + file.path,
-            isActive: l === activeLeaf,
+            isActive: l.view === activeView,
             label: file.basename,
             languageId: "markdown",
           };
@@ -168,6 +168,7 @@ function handleToolCall(
           true,
         );
       }
+      // fire-and-forget: awaiting would require async through the entire RPC call chain
       ctx.app.workspace.getLeaf().openFile(file);
       return toolResult({ success: true, filePath: file.path });
     }
@@ -180,7 +181,7 @@ function handleToolCall(
   }
 }
 
-interface RpcMessage {
+export interface RpcMessage {
   jsonrpc: string;
   id: string | number;
   method: string;

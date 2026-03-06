@@ -1,5 +1,6 @@
 import { createServer as createTcpServer, Server, Socket } from "node:net";
 import { computeAcceptKey, parseFrame, createFrame, OPCODE } from "./websocket";
+import type { RpcMessage } from "./tools";
 
 interface Client {
   socket: Socket;
@@ -16,7 +17,7 @@ export interface BridgeServer {
 interface ServerOptions {
   authToken: string;
   debug?: boolean;
-  onMessage(msg: Record<string, unknown>): Record<string, unknown>;
+  onMessage(msg: RpcMessage): Record<string, unknown>;
 }
 
 function log(options: ServerOptions, ...args: unknown[]) {
@@ -101,7 +102,7 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
         try {
           const text = frame.payload.toString();
           log(options, "recv:", text);
-          const msg = JSON.parse(text);
+          const msg = JSON.parse(text) as RpcMessage;
           if (msg.id === undefined || msg.id === null) {
             log(options, "skip notification (no id):", msg.method);
             continue;
@@ -112,6 +113,15 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
           client.socket.write(createFrame(OPCODE.TEXT, responseText));
         } catch (e) {
           log(options, "error processing frame:", e);
+          const isParseError = e instanceof SyntaxError;
+          const rpcError = {
+            jsonrpc: "2.0",
+            id: null,
+            error: isParseError
+              ? { code: -32700, message: "Parse error" }
+              : { code: -32603, message: "Internal error" },
+          };
+          client.socket.write(createFrame(OPCODE.TEXT, JSON.stringify(rpcError)));
         }
       }
     }
@@ -125,6 +135,10 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
 
           const onData = (chunk: Buffer) => {
             httpBuffer += chunk.toString();
+            if (httpBuffer.length > 8192) {
+              socket.destroy();
+              return;
+            }
             if (!httpBuffer.includes("\r\n\r\n")) return;
             socket.removeListener("data", onData);
             const headers = parseHttpHeaders(httpBuffer);
