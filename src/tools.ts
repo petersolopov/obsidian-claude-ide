@@ -1,4 +1,4 @@
-import { App, MarkdownView, TFile, FileSystemAdapter } from "obsidian";
+import { type App, MarkdownView, TFile, type FileSystemAdapter } from "obsidian";
 
 interface Position {
   line: number;
