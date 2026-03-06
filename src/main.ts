@@ -57,7 +57,7 @@ export default class ObsidianClaudeBridge extends Plugin {
     );
 
     console.log(
-      `obsidian-claude-bridge: listening on 127.0.0.1:${this.port}`,
+      `obsidian-claude-ide: listening on 127.0.0.1:${this.port}`,
     );
   }
 

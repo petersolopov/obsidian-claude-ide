@@ -1,5 +1,5 @@
 {
-  "name": "obsidian-claude-bridge",
+  "name": "obsidian-claude-ide",
   "version": "0.1.0",
   "type": "module",
   "scripts": {

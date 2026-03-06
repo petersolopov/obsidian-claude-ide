@@ -10,7 +10,7 @@
 After code changes, reload the plugin without restarting Obsidian:
 
 ```bash
-obsidian plugin:reload id=obsidian-claude-bridge
+obsidian plugin:reload id=obsidian-claude-ide
 ```
 
 ## debugging
