@@ -9,7 +9,7 @@ import {
 import { join } from "node:path";
 import { homedir } from "node:os";
 
-const LOCK_DIR = join(homedir(), ".claude", "ide");
+const DEFAULT_LOCK_DIR = join(homedir(), ".claude", "ide");
 
 export interface LockFileData {
   port: number;
@@ -18,9 +18,12 @@ export interface LockFileData {
   authToken: string;
 }
 
-export function createLockFile(data: LockFileData): string {
-  mkdirSync(LOCK_DIR, { recursive: true });
-  const lockPath = join(LOCK_DIR, `${data.port}.lock`);
+export function createLockFile(
+  data: LockFileData,
+  lockDir: string = DEFAULT_LOCK_DIR,
+): string {
+  mkdirSync(lockDir, { recursive: true });
+  const lockPath = join(lockDir, `${data.port}.lock`);
   const tmpPath = lockPath + ".tmp";
   const content = JSON.stringify({
     pid: data.pid,
@@ -34,23 +37,28 @@ export function createLockFile(data: LockFileData): string {
   return lockPath;
 }
 
-export function removeLockFile(port: number): void {
+export function removeLockFile(
+  port: number,
+  lockDir: string = DEFAULT_LOCK_DIR,
+): void {
   try {
-    unlinkSync(join(LOCK_DIR, `${port}.lock`));
+    unlinkSync(join(lockDir, `${port}.lock`));
   } catch {
     // already removed
   }
 }
 
-export function cleanStaleLockFiles(): void {
+export function cleanStaleLockFiles(
+  lockDir: string = DEFAULT_LOCK_DIR,
+): void {
   let files: string[];
   try {
-    files = readdirSync(LOCK_DIR).filter((f) => f.endsWith(".lock"));
+    files = readdirSync(lockDir).filter((f) => f.endsWith(".lock"));
   } catch {
     return;
   }
   for (const file of files) {
-    const lockPath = join(LOCK_DIR, file);
+    const lockPath = join(lockDir, file);
     try {
       const data = JSON.parse(readFileSync(lockPath, "utf-8"));
       if (data.ideName !== "Obsidian") continue;
