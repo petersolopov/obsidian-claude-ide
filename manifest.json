@@ -1,6 +1,6 @@
 {
   "id": "obsidian-claude-ide",
-  "name": "Claude IDE",
+  "name": "Obsidian IDE",
   "version": "0.1.0",
   "minAppVersion": "1.5.0",
   "description": "WebSocket server implementing IDE protocol for Claude Code",
