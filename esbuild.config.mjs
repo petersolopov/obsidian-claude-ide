@@ -21,6 +21,7 @@ const context = await esbuild.context({
     "@lezer/highlight",
     "@lezer/lr",
     "node:net",
+    "node:http",
     "node:crypto",
     "node:fs",
     "node:os",

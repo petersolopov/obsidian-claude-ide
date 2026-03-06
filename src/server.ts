@@ -1,4 +1,6 @@
-import { createServer as createTcpServer, Server, Socket } from "node:net";
+import { createServer, Server } from "node:http";
+import type { IncomingHttpHeaders } from "node:http";
+import { Socket } from "node:net";
 import { computeAcceptKey, parseFrame, createFrame, OPCODE } from "./websocket.ts";
 import type { RpcMessage } from "./tools.ts";
 
@@ -29,20 +31,7 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
   let server: Server | null = null;
   let pingInterval: ReturnType<typeof setInterval> | null = null;
 
-  function parseHttpHeaders(data: string): Record<string, string> {
-    const headers: Record<string, string> = {};
-    const lines = data.split("\r\n");
-    for (let i = 1; i < lines.length; i++) {
-      const colonIdx = lines[i].indexOf(":");
-      if (colonIdx === -1) continue;
-      const key = lines[i].substring(0, colonIdx).trim().toLowerCase();
-      const value = lines[i].substring(colonIdx + 1).trim();
-      headers[key] = value;
-    }
-    return headers;
-  }
-
-  function handleUpgrade(socket: Socket, headers: Record<string, string>) {
+  function handleUpgrade(socket: Socket, headers: IncomingHttpHeaders) {
     log(options, "upgrade headers:", JSON.stringify(headers));
     if (headers["x-claude-code-ide-authorization"] !== options.authToken) {
       log(options, "auth FAIL, expected:", options.authToken, "got:", headers["x-claude-code-ide-authorization"]);
@@ -53,7 +42,7 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
     log(options, "auth OK");
 
     const wsKey = headers["sec-websocket-key"];
-    if (!wsKey) {
+    if (!wsKey || Array.isArray(wsKey)) {
       socket.write("HTTP/1.1 400 Bad Request\r\n\r\n");
       socket.destroy();
       return;
@@ -88,6 +77,7 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
       const frame = parseFrame(client.buffer);
       if (!frame) break;
       client.buffer = client.buffer.subarray(frame.totalLength);
+      if (!client.socket.writable) break;
 
       if (frame.opcode === OPCODE.PING) {
         client.socket.write(createFrame(OPCODE.PONG, frame.payload));
@@ -129,31 +119,23 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
 
   return {
     start(): Promise<number> {
-      return new Promise((resolve) => {
-        server = createTcpServer((socket) => {
-          let httpBuffer = "";
+      return new Promise((resolve, reject) => {
+        server = createServer((_req, res) => {
+          res.writeHead(400);
+          res.end();
+        });
 
-          const onData = (chunk: Buffer) => {
-            httpBuffer += chunk.toString();
-            if (httpBuffer.length > 8192) {
-              socket.destroy();
-              return;
-            }
-            if (!httpBuffer.includes("\r\n\r\n")) return;
-            socket.removeListener("data", onData);
-            const headers = parseHttpHeaders(httpBuffer);
+        server.on("upgrade", (req, socket, head) => {
+          const netSocket = socket as Socket;
+          if (head.length > 0) {
+            netSocket.unshift(head);
+          }
+          handleUpgrade(netSocket, req.headers);
+        });
 
-            if (headers["upgrade"]?.toLowerCase() !== "websocket") {
-              log(options, "not a websocket upgrade:", httpBuffer);
-              socket.write("HTTP/1.1 400 Bad Request\r\n\r\n");
-              socket.destroy();
-              return;
-            }
-
-            handleUpgrade(socket, headers);
-          };
-
-          socket.on("data", onData);
+        server.on("error", (e) => {
+          log(options, "server error:", e.message);
+          reject(e);
         });
 
         server.listen(0, "127.0.0.1", () => {
@@ -167,7 +149,9 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
                 continue;
               }
               client.alive = false;
-              client.socket.write(createFrame(OPCODE.PING, Buffer.alloc(0)));
+              if (client.socket.writable) {
+                client.socket.write(createFrame(OPCODE.PING, Buffer.alloc(0)));
+              }
             }
           }, 30_000);
 
@@ -188,6 +172,7 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
     broadcast(data: object) {
       const frame = createFrame(OPCODE.TEXT, JSON.stringify(data));
       for (const client of clients) {
+        if (!client.socket.writable) continue;
         client.socket.write(frame);
       }
     },
