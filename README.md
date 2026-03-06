@@ -21,5 +21,6 @@ ln -s "$(pwd)" /path/to/vault/.obsidian/plugins/obsidian-claude-ide
 
 ## How it works
 
-Once enabled, Claude Code detects Obsidian and shows it in the IDE selector.
-The plugin sends your current selection and open files to Claude Code automatically.
+The plugin runs an MCP server over WebSocket inside Obsidian.
+Claude Code discovers it automatically and shows Obsidian in the `/ide` selector.
+Once connected, the plugin sends your current selection and open files to Claude Code.
