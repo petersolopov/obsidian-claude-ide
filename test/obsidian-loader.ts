@@ -1,3 +1,3 @@
 import { register } from "node:module";
 
-register("./obsidian-hooks.mjs", import.meta.url);
+register("./obsidian-hooks.ts", import.meta.url);
