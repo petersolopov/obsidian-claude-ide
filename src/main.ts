@@ -26,7 +26,6 @@ export default class ObsidianClaudeBridge extends Plugin {
 
     this.server = createBridgeServer({
       authToken,
-      debug: Boolean(process.env.CLAUDE_BRIDGE_DEBUG),
       onMessage: (msg) =>
         handleRpcMessage(msg, {
           app: this.app,

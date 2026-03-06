@@ -3,6 +3,7 @@ import type { IncomingHttpHeaders } from "node:http";
 import { Socket } from "node:net";
 import { computeAcceptKey, parseFrame, createFrame, OPCODE } from "./websocket.ts";
 import type { RpcMessage } from "./tools.ts";
+import { log } from "./log.ts";
 
 interface Client {
   socket: Socket;
@@ -18,12 +19,7 @@ export interface BridgeServer {
 
 interface ServerOptions {
   authToken: string;
-  debug?: boolean;
   onMessage(msg: RpcMessage): Record<string, unknown>;
-}
-
-function log(options: ServerOptions, ...args: unknown[]) {
-  if (options.debug) console.log("[bridge]", ...args);
 }
 
 export function createBridgeServer(options: ServerOptions): BridgeServer {
@@ -32,14 +28,14 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
   let pingInterval: ReturnType<typeof setInterval> | null = null;
 
   function handleUpgrade(socket: Socket, headers: IncomingHttpHeaders) {
-    log(options, "upgrade headers:", JSON.stringify(headers));
+    log("debug", "upgrade headers:", JSON.stringify(headers));
     if (headers["x-claude-code-ide-authorization"] !== options.authToken) {
-      log(options, "auth FAIL, expected:", options.authToken, "got:", headers["x-claude-code-ide-authorization"]);
+      log("debug", "auth FAIL, expected:", options.authToken, "got:", headers["x-claude-code-ide-authorization"]);
       socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
       socket.destroy();
       return;
     }
-    log(options, "auth OK");
+    log("debug", "auth OK");
 
     const wsKey = headers["sec-websocket-key"];
     if (!wsKey || Array.isArray(wsKey)) {
@@ -57,7 +53,7 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
       `Sec-WebSocket-Accept: ${acceptKey}\r\n` +
       (protocol ? `Sec-WebSocket-Protocol: ${protocol}\r\n` : "") +
       "\r\n";
-    log(options, "upgrade response:", JSON.stringify(upgradeResponse));
+    log("debug", "upgrade response:", JSON.stringify(upgradeResponse));
     socket.write(upgradeResponse);
 
     const client: Client = { socket, buffer: Buffer.alloc(0), alive: true };
@@ -68,8 +64,8 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
       processFrames(client);
     });
 
-    socket.on("close", () => { log(options, "client disconnected"); clients.delete(client); });
-    socket.on("error", (e) => { log(options, "client error:", e.message); clients.delete(client); });
+    socket.on("close", () => { log("debug", "client disconnected"); clients.delete(client); });
+    socket.on("error", (e) => { log("error", "client error:", e.message); clients.delete(client); });
   }
 
   function processFrames(client: Client) {
@@ -91,18 +87,18 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
       } else if (frame.opcode === OPCODE.TEXT) {
         try {
           const text = frame.payload.toString();
-          log(options, "recv:", text);
+          log("debug", "recv:", text);
           const msg = JSON.parse(text) as RpcMessage;
           if (msg.id === undefined || msg.id === null) {
-            log(options, "skip notification (no id):", msg.method);
+            log("debug", "skip notification (no id):", msg.method);
             continue;
           }
           const response = options.onMessage(msg);
           const responseText = JSON.stringify(response);
-          log(options, "send:", responseText);
+          log("debug", "send:", responseText);
           client.socket.write(createFrame(OPCODE.TEXT, responseText));
         } catch (e) {
-          log(options, "error processing frame:", e);
+          log("error", "error processing frame:", e);
           const isParseError = e instanceof SyntaxError;
           const rpcError = {
             jsonrpc: "2.0",
@@ -134,7 +130,7 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
         });
 
         server.on("error", (e) => {
-          log(options, "server error:", e.message);
+          log("error", "server error:", e.message);
           reject(e);
         });
 
