@@ -8,9 +8,9 @@ import {
 } from "../src/websocket.ts";
 
 describe("computeAcceptKey", () => {
-  it("returns correct key per RFC 6455", () => {
+  it("returns correct key for Claude Code GUID", () => {
     const key = "dGhlIHNhbXBsZSBub25jZQ==";
-    const expected = "eZQ+K7t3pKoCHCfXLyZ8C32JWlc=";
+    const expected = "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=";
     assert.strictEqual(computeAcceptKey(key), expected);
   });
 });

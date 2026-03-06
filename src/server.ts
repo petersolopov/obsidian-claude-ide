@@ -15,7 +15,12 @@ export interface BridgeServer {
 
 interface ServerOptions {
   authToken: string;
+  debug?: boolean;
   onMessage(msg: Record<string, unknown>): Record<string, unknown>;
+}
+
+function log(options: ServerOptions, ...args: unknown[]) {
+  if (options.debug) console.log("[bridge]", ...args);
 }
 
 export function createBridgeServer(options: ServerOptions): BridgeServer {
@@ -37,11 +42,14 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
   }
 
   function handleUpgrade(socket: Socket, headers: Record<string, string>) {
+    log(options, "upgrade headers:", JSON.stringify(headers));
     if (headers["x-claude-code-ide-authorization"] !== options.authToken) {
+      log(options, "auth FAIL, expected:", options.authToken, "got:", headers["x-claude-code-ide-authorization"]);
       socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
       socket.destroy();
       return;
     }
+    log(options, "auth OK");
 
     const wsKey = headers["sec-websocket-key"];
     if (!wsKey) {
@@ -51,13 +59,16 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
     }
 
     const acceptKey = computeAcceptKey(wsKey);
-    socket.write(
+    const protocol = headers["sec-websocket-protocol"];
+    const upgradeResponse =
       "HTTP/1.1 101 Switching Protocols\r\n" +
-        "Upgrade: websocket\r\n" +
-        "Connection: Upgrade\r\n" +
-        `Sec-WebSocket-Accept: ${acceptKey}\r\n` +
-        "\r\n",
-    );
+      "Upgrade: websocket\r\n" +
+      "Connection: Upgrade\r\n" +
+      `Sec-WebSocket-Accept: ${acceptKey}\r\n` +
+      (protocol ? `Sec-WebSocket-Protocol: ${protocol}\r\n` : "") +
+      "\r\n";
+    log(options, "upgrade response:", JSON.stringify(upgradeResponse));
+    socket.write(upgradeResponse);
 
     const client: Client = { socket, buffer: Buffer.alloc(0), alive: true };
     clients.add(client);
@@ -67,8 +78,8 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
       processFrames(client);
     });
 
-    socket.on("close", () => clients.delete(client));
-    socket.on("error", () => clients.delete(client));
+    socket.on("close", () => { log(options, "client disconnected"); clients.delete(client); });
+    socket.on("error", (e) => { log(options, "client error:", e.message); clients.delete(client); });
   }
 
   function processFrames(client: Client) {
@@ -88,14 +99,19 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
         break;
       } else if (frame.opcode === OPCODE.TEXT) {
         try {
-          const msg = JSON.parse(frame.payload.toString());
-          if (msg.id === undefined || msg.id === null) continue;
+          const text = frame.payload.toString();
+          log(options, "recv:", text);
+          const msg = JSON.parse(text);
+          if (msg.id === undefined || msg.id === null) {
+            log(options, "skip notification (no id):", msg.method);
+            continue;
+          }
           const response = options.onMessage(msg);
-          client.socket.write(
-            createFrame(OPCODE.TEXT, JSON.stringify(response)),
-          );
-        } catch {
-          // malformed message
+          const responseText = JSON.stringify(response);
+          log(options, "send:", responseText);
+          client.socket.write(createFrame(OPCODE.TEXT, responseText));
+        } catch (e) {
+          log(options, "error processing frame:", e);
         }
       }
     }
@@ -114,6 +130,7 @@ export function createBridgeServer(options: ServerOptions): BridgeServer {
             const headers = parseHttpHeaders(httpBuffer);
 
             if (headers["upgrade"]?.toLowerCase() !== "websocket") {
+              log(options, "not a websocket upgrade:", httpBuffer);
               socket.write("HTTP/1.1 400 Bad Request\r\n\r\n");
               socket.destroy();
               return;
