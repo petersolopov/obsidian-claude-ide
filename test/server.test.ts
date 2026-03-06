@@ -156,6 +156,69 @@ describe("bridge server", () => {
     assert.strictEqual(d2.method, "test");
   });
 
+  it("removes client after close frame", async () => {
+    server = createBridgeServer({
+      authToken: AUTH_TOKEN,
+      onMessage: (msg) => ({ jsonrpc: "2.0", id: msg.id, result: {} }),
+    });
+
+    const port = await server.start();
+    const { socket: s1 } = await connectWebSocket(port, AUTH_TOKEN);
+    const { socket: s2 } = await connectWebSocket(port, AUTH_TOKEN);
+    sockets.push(s1, s2);
+
+    const closeReply = waitForFrame(s1);
+    s1.write(createMaskedFrame(OPCODE.CLOSE, Buffer.alloc(0)));
+    const frame = await closeReply;
+    assert.ok(frame);
+    assert.strictEqual(frame.opcode, OPCODE.CLOSE);
+
+    const p2 = waitForFrame(s2);
+    server.broadcast({ jsonrpc: "2.0", method: "after_close" });
+    const f2 = await p2;
+    assert.strictEqual(JSON.parse(f2!.payload.toString()).method, "after_close");
+  });
+
+  it("returns RPC parse error for invalid JSON", async () => {
+    server = createBridgeServer({
+      authToken: AUTH_TOKEN,
+      onMessage: () => ({ jsonrpc: "2.0", id: null, result: {} }),
+    });
+
+    const port = await server.start();
+    const { socket } = await connectWebSocket(port, AUTH_TOKEN);
+    sockets.push(socket);
+
+    socket.write(createMaskedFrame(OPCODE.TEXT, "not json{{{"));
+    const frame = await waitForFrame(socket);
+    assert.ok(frame);
+    assert.strictEqual(frame.opcode, OPCODE.TEXT);
+
+    const rpcError = JSON.parse(frame.payload.toString());
+    assert.strictEqual(rpcError.jsonrpc, "2.0");
+    assert.strictEqual(rpcError.id, null);
+    assert.strictEqual(rpcError.error.code, -32700);
+    assert.strictEqual(rpcError.error.message, "Parse error");
+  });
+
+  it("responds to ping with pong", async () => {
+    server = createBridgeServer({
+      authToken: AUTH_TOKEN,
+      onMessage: () => ({}),
+    });
+
+    const port = await server.start();
+    const { socket } = await connectWebSocket(port, AUTH_TOKEN);
+    sockets.push(socket);
+
+    const pingPayload = Buffer.from("heartbeat");
+    socket.write(createMaskedFrame(OPCODE.PING, pingPayload));
+    const frame = await waitForFrame(socket);
+    assert.ok(frame);
+    assert.strictEqual(frame.opcode, OPCODE.PONG);
+    assert.strictEqual(frame.payload.toString(), "heartbeat");
+  });
+
   it("rejects connection with wrong auth token", async () => {
     server = createBridgeServer({
       authToken: AUTH_TOKEN,
