@@ -1,0 +1,239 @@
+import { App, MarkdownView, TFile, FileSystemAdapter } from "obsidian";
+
+interface Position {
+  line: number;
+  character: number;
+}
+
+export interface SelectionData {
+  filePath: string;
+  relativePath: string;
+  cursor: Position;
+  selection: {
+    start: Position;
+    end: Position;
+    isEmpty: boolean;
+    text: string;
+  };
+}
+
+export interface ToolContext {
+  app: App;
+  latestSelection: SelectionData | null;
+}
+
+const TOOL_SCHEMAS = [
+  {
+    name: "getCurrentSelection",
+    description: "Get the current selection in the active editor",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "getLatestSelection",
+    description: "Get the most recent selection (cached from last change)",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "getOpenEditors",
+    description: "Get all open editor tabs",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "getWorkspaceFolders",
+    description: "Get workspace folder paths",
+    inputSchema: { type: "object", properties: {} },
+  },
+  {
+    name: "openFile",
+    description: "Open a file in Obsidian",
+    inputSchema: {
+      type: "object",
+      properties: {
+        filePath: {
+          type: "string",
+          description: "File name or path to open",
+        },
+      },
+      required: ["filePath"],
+    },
+  },
+];
+
+const STUB_HANDLERS: Record<string, () => object> = {
+  openDiff: () => ({ success: false }),
+  getDiagnostics: () => ({ diagnostics: [] }),
+  checkDocumentDirty: () => ({ isDirty: false }),
+  saveDocument: () => ({ success: true }),
+  close_tab: () => ({ success: false }),
+  closeAllDiffTabs: () => ({ success: true }),
+  executeCode: () => ({ success: false }),
+};
+
+function getBasePath(app: App): string {
+  return (app.vault.adapter as FileSystemAdapter).getBasePath();
+}
+
+export function getSelectionData(app: App): SelectionData | null {
+  const view = app.workspace.getActiveViewOfType(MarkdownView);
+  if (!view?.file) return null;
+  const editor = view.editor;
+  const basePath = getBasePath(app);
+  const cursor = editor.getCursor();
+  const from = editor.getCursor("from");
+  const to = editor.getCursor("to");
+  const selectedText = editor.getSelection();
+
+  return {
+    filePath: basePath + "/" + view.file.path,
+    relativePath: view.file.path,
+    cursor: { line: cursor.line, character: cursor.ch },
+    selection: {
+      start: { line: from.line, character: from.ch },
+      end: { line: to.line, character: to.ch },
+      isEmpty: !selectedText,
+      text: selectedText || "",
+    },
+  };
+}
+
+function toolResult(
+  data: object,
+  isError = false,
+): { content: Array<{ type: string; text: string }>; isError?: boolean } {
+  const result: {
+    content: Array<{ type: string; text: string }>;
+    isError?: boolean;
+  } = {
+    content: [{ type: "text", text: JSON.stringify(data) }],
+  };
+  if (isError) result.isError = true;
+  return result;
+}
+
+function handleToolCall(
+  name: string,
+  args: Record<string, unknown>,
+  ctx: ToolContext,
+) {
+  switch (name) {
+    case "getCurrentSelection": {
+      const data = getSelectionData(ctx.app);
+      if (!data) return toolResult({ error: "no active file" });
+      return toolResult(data);
+    }
+    case "getLatestSelection": {
+      if (!ctx.latestSelection)
+        return toolResult({ error: "no selection tracked yet" });
+      return toolResult(ctx.latestSelection);
+    }
+    case "getOpenEditors": {
+      const basePath = getBasePath(ctx.app);
+      const leaves = ctx.app.workspace.getLeavesOfType("markdown");
+      const activeLeaf = ctx.app.workspace.activeLeaf;
+      const tabs = leaves
+        .filter((l) => (l.view as MarkdownView).file)
+        .map((l) => {
+          const file = (l.view as MarkdownView).file!;
+          return {
+            uri: "file://" + basePath + "/" + file.path,
+            isActive: l === activeLeaf,
+            label: file.basename,
+            languageId: "markdown",
+          };
+        });
+      return toolResult({ tabs });
+    }
+    case "getWorkspaceFolders": {
+      return toolResult({ folders: [getBasePath(ctx.app)] });
+    }
+    case "openFile": {
+      const filePath = args.filePath as string;
+      const basePath = getBasePath(ctx.app);
+      const relativePath = filePath.startsWith(basePath + "/")
+        ? filePath.slice(basePath.length + 1)
+        : filePath;
+
+      let file = ctx.app.vault.getAbstractFileByPath(relativePath);
+      if (!(file instanceof TFile)) {
+        file =
+          ctx.app.vault
+            .getFiles()
+            .find(
+              (f) => f.name === relativePath || f.basename === relativePath,
+            ) ?? null;
+      }
+      if (!(file instanceof TFile)) {
+        return toolResult(
+          { error: `File not found: ${filePath}` },
+          true,
+        );
+      }
+      ctx.app.workspace.getLeaf().openFile(file);
+      return toolResult({ success: true, filePath: file.path });
+    }
+    default: {
+      if (name in STUB_HANDLERS) {
+        return toolResult(STUB_HANDLERS[name]());
+      }
+      return null;
+    }
+  }
+}
+
+interface RpcMessage {
+  jsonrpc: string;
+  id: string | number;
+  method: string;
+  params?: Record<string, unknown>;
+}
+
+export function handleRpcMessage(
+  msg: RpcMessage,
+  ctx: ToolContext,
+): Record<string, unknown> {
+  switch (msg.method) {
+    case "initialize":
+      return {
+        jsonrpc: "2.0",
+        id: msg.id,
+        result: {
+          protocolVersion:
+            (msg.params?.protocolVersion as string) || "2025-03-26",
+          capabilities: { tools: {} },
+          serverInfo: {
+            name: "obsidian-claude-bridge",
+            version: "0.1.0",
+          },
+        },
+      };
+
+    case "tools/list":
+      return {
+        jsonrpc: "2.0",
+        id: msg.id,
+        result: { tools: TOOL_SCHEMAS },
+      };
+
+    case "tools/call": {
+      const params = msg.params || {};
+      const name = params.name as string;
+      const args = (params.arguments || {}) as Record<string, unknown>;
+      const result = handleToolCall(name, args, ctx);
+      if (!result) {
+        return {
+          jsonrpc: "2.0",
+          id: msg.id,
+          error: { code: -32601, message: `Tool not found: ${name}` },
+        };
+      }
+      return { jsonrpc: "2.0", id: msg.id, result };
+    }
+
+    default:
+      return {
+        jsonrpc: "2.0",
+        id: msg.id,
+        error: { code: -32601, message: "Method not found" },
+      };
+  }
+}
