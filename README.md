@@ -1,6 +1,6 @@
 # Obsidian IDE
 
-Connect Obsidian to Claude Code as an IDE.
+Obsidian plugin that integrates with Claude Code.
 
 > The plugin is in active development
 
