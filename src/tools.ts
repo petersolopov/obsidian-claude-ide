@@ -73,7 +73,7 @@ function getBasePath(app: App): string {
   return (app.vault.adapter as FileSystemAdapter).getBasePath();
 }
 
-export interface AtMentionParams {
+interface AtMentionParams {
   filePath: string;
   lineStart?: number;
   lineEnd?: number;
@@ -85,6 +85,7 @@ export function buildAtMentionParams(data: SelectionData): AtMentionParams {
   }
   return {
     filePath: data.filePath,
+    // protocol uses 0-based lines; Obsidian getCursor() is already 0-based
     lineStart: data.selection.start.line,
     lineEnd: data.selection.end.line,
   };
