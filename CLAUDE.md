@@ -26,6 +26,10 @@ No need to ask the user to open DevTools or restart Obsidian.
 
 Obsidian plugin that acts as an MCP server over WebSocket. Claude Code discovers the plugin via lock files in `~/.claude/ide/` and connects to exchange RPC messages (initialize, tools/list, tools/call). The plugin exposes Obsidian-specific tools: selection, open editors, workspace folders, file opening. esbuild bundles everything into a single `main.js` for Obsidian to load.
 
+## protocol reference
+
+Reverse-engineered protocol doc from nvim plugin: https://raw.githubusercontent.com/coder/claudecode.nvim/refs/heads/main/PROTOCOL.md
+
 ## how Claude Code uses IDE tools
 
 Claude Code CLI sits between the model and the IDE MCP server. Most IDE tools are CLI-internal — the model never sees them.
