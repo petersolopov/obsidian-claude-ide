@@ -166,7 +166,9 @@ export function createIdeServer(options: ServerOptions): IdeServer {
     },
 
     broadcast(data: object) {
-      const frame = createFrame(OPCODE.TEXT, JSON.stringify(data));
+      const text = JSON.stringify(data);
+      log("debug", "broadcast:", text);
+      const frame = createFrame(OPCODE.TEXT, text);
       for (const client of clients) {
         if (!client.socket.writable) continue;
         client.socket.write(frame);
