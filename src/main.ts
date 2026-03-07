@@ -6,9 +6,9 @@ import { createLockFile, removeLockFile, cleanStaleLockFiles } from "./lock.ts";
 import {
   handleRpcMessage,
   getSelectionData,
+  buildAtMentionParams,
   SelectionData,
 } from "./tools.ts";
-import { buildAtMentionParams } from "./mention.ts";
 
 export default class ObsidianIdePlugin extends Plugin {
   private server: IdeServer | null = null;

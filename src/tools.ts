@@ -73,6 +73,23 @@ function getBasePath(app: App): string {
   return (app.vault.adapter as FileSystemAdapter).getBasePath();
 }
 
+export interface AtMentionParams {
+  filePath: string;
+  lineStart?: number;
+  lineEnd?: number;
+}
+
+export function buildAtMentionParams(data: SelectionData): AtMentionParams {
+  if (data.selection.isEmpty) {
+    return { filePath: data.filePath };
+  }
+  return {
+    filePath: data.filePath,
+    lineStart: data.selection.start.line,
+    lineEnd: data.selection.end.line,
+  };
+}
+
 export function getSelectionData(app: App): SelectionData | null {
   const view = app.workspace.getActiveViewOfType(MarkdownView);
   if (!view?.file) return null;

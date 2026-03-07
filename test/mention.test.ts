@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import { buildAtMentionParams } from "../src/mention.ts";
+import { buildAtMentionParams } from "../src/tools.ts";
 import type { SelectionData } from "../src/tools.ts";
 
 describe("buildAtMentionParams", () => {
