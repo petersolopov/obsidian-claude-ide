@@ -8,6 +8,7 @@ import {
   getSelectionData,
   SelectionData,
 } from "./tools.ts";
+import { buildAtMentionParams } from "./mention.ts";
 
 export default class ObsidianIdePlugin extends Plugin {
   private server: IdeServer | null = null;
@@ -55,6 +56,21 @@ export default class ObsidianIdePlugin extends Plugin {
         }
       }),
     );
+
+    this.addCommand({
+      id: "send-to-claude",
+      name: "Send to Claude",
+      editorCallback: (editor, view) => {
+        const data = getSelectionData(this.app);
+        if (!data) return;
+
+        this.server?.broadcast({
+          jsonrpc: "2.0",
+          method: "at_mentioned",
+          params: buildAtMentionParams(data),
+        });
+      },
+    });
 
     console.log(
       `obsidian-claude-ide: listening on 127.0.0.1:${this.port}`,
