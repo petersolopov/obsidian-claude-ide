@@ -73,7 +73,7 @@ export default class ObsidianIdePlugin extends Plugin {
     });
 
     console.log(
-      `obsidian-claude-ide: listening on 127.0.0.1:${this.port}`,
+      `claude-code-ide: listening on 127.0.0.1:${this.port}`,
     );
   }
 

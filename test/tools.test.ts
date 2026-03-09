@@ -22,7 +22,7 @@ describe("handleRpcMessage", () => {
     const result = res.result as Record<string, unknown>;
     assert.strictEqual(result.protocolVersion, "2025-03-26");
     const info = result.serverInfo as Record<string, string>;
-    assert.strictEqual(info.name, "obsidian-claude-ide");
+    assert.strictEqual(info.name, "claude-code-ide");
   });
 
   it("initialize defaults protocolVersion", () => {

@@ -1,9 +1,10 @@
 {
-  "id": "obsidian-claude-ide",
+  "id": "claude-code-ide",
   "name": "Obsidian IDE",
   "version": "0.1.0",
   "minAppVersion": "1.5.0",
-  "description": "WebSocket server implementing IDE protocol for Claude Code",
+  "description": "Connect Obsidian to Claude Code — shares your selections and open files with the CLI",
   "author": "petersolopov",
+  "authorUrl": "https://github.com/petersolopov",
   "isDesktopOnly": true
 }

@@ -220,7 +220,7 @@ export function handleRpcMessage(
             (msg.params?.protocolVersion as string) || "2025-03-26",
           capabilities: { tools: {} },
           serverInfo: {
-            name: "obsidian-claude-ide",
+            name: "claude-code-ide",
             version: "0.1.0",
           },
         },
