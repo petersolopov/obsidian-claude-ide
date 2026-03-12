@@ -2,7 +2,7 @@
 
 Obsidian plugin that integrates with Claude Code.
 
-> The plugin is in active development
+https://github.com/user-attachments/assets/79c7e68f-accd-42a8-9508-6d5953aa90c4
 
 ## Install
 
