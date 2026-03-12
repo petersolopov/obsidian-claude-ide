@@ -24,7 +24,10 @@ cp main.js manifest.json /path/to/vault/.obsidian/plugins/claude-code-ide/
 
 The plugin runs an MCP server over WebSocket inside Obsidian.
 Claude Code discovers it automatically and shows Obsidian in the `/ide` selector.
-Once connected, the plugin sends your current selection and open files to Claude Code.
+Once connected, Claude Code can see your open files and current selection.
+Use the "Send to Claude" command to explicitly pass selected text as context.
+
+No diff view — edits appear directly in the file.
 
 ## Security
 

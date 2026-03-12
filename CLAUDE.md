@@ -42,7 +42,7 @@ Claude Code CLI sits between the model and the IDE MCP server. Most IDE tools ar
 
 CLI **internally** calls tools on the IDE server via `tools/call`:
 - `closeAllDiffTabs` and `getDiagnostics` — confirmed in Obsidian logs
-- `openDiff` — confirmed in VS Code (CLI shows diff when model uses `Edit`)
+- `openDiff` — confirmed in VS Code (CLI shows diff when model uses `Edit`). Not implemented in Obsidian — no diff view
 - `openFile`, `close_tab`, `set_permission_mode` — found in CLI binary, not confirmed in practice
 
 Two exceptions — `executeCode` and `getDiagnostics` — are exposed to the model (hardcoded whitelist in CLI binary as of v2.1.71).
