@@ -7,7 +7,9 @@
 
 ## dev workflow
 
-After code changes, reload the plugin without restarting Obsidian:
+esbuild outputs `main.js` to the project root. Deploy by copying `main.js` and `manifest.json` to the vault plugin folder.
+
+After deploying, reload the plugin without restarting Obsidian:
 
 ```bash
 obsidian plugin:reload id=obsidian-claude-ide
@@ -25,6 +27,10 @@ No need to ask the user to open DevTools or restart Obsidian.
 ## architecture
 
 Obsidian plugin that acts as an MCP server over WebSocket. Claude Code discovers the plugin via lock files in `~/.claude/ide/` and connects to exchange RPC messages (initialize, tools/list, tools/call). The plugin exposes Obsidian-specific tools: selection, open editors, workspace folders, file opening. esbuild bundles everything into a single `main.js` for Obsidian to load.
+
+## naming
+
+Plugin name: `Obsidian IDE`, ID: `claude-code-ide`. In Claude Code `/ide` selector, "Obsidian" appears as the IDE — Obsidian IS the IDE that Claude Code connects to. That's why the plugin is named "Obsidian IDE", not "Claude IDE" (which would imply Claude is the IDE). ID uses "claude-code-ide" because community plugins prohibit "obsidian-" prefix, and the ID identifies the integration target. "Claude Code" in the description ensures search discoverability.
 
 ## protocol reference
 

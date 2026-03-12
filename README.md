@@ -13,7 +13,8 @@ git clone https://github.com/petersolopov/obsidian-claude-ide
 cd obsidian-claude-ide
 npm install
 npm run build
-ln -s "$(pwd)" /path/to/vault/.obsidian/plugins/obsidian-claude-ide
+mkdir -p /path/to/vault/.obsidian/plugins/claude-code-ide
+cp main.js manifest.json /path/to/vault/.obsidian/plugins/claude-code-ide/
 ```
 
 1. Enable in Obsidian: Settings → Community plugins → Installed plugins → toggle on Obsidian IDE
