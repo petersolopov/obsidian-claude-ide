@@ -138,7 +138,7 @@ describe("buildAtMentionParams", () => {
     };
     const params = buildAtMentionParams(data);
     assert.deepStrictEqual(params, {
-      filePath: "/vault/test.md",
+      filePath: "test.md",
       lineStart: 3,
       lineEnd: 7,
     });
@@ -158,7 +158,45 @@ describe("buildAtMentionParams", () => {
     };
     const params = buildAtMentionParams(data);
     assert.deepStrictEqual(params, {
-      filePath: "/vault/note.md",
+      filePath: "note.md",
+    });
+  });
+
+  it("quotes filePath with spaces", () => {
+    const data: SelectionData = {
+      filePath: "/vault/mass-energy equivalence.md",
+      relativePath: "mass-energy equivalence.md",
+      cursor: { line: 0, character: 0 },
+      selection: {
+        start: { line: 0, character: 0 },
+        end: { line: 0, character: 0 },
+        isEmpty: true,
+        text: "",
+      },
+    };
+    const params = buildAtMentionParams(data);
+    assert.deepStrictEqual(params, {
+      filePath: '"mass-energy equivalence.md"',
+    });
+  });
+
+  it("quotes filePath with spaces and line range", () => {
+    const data: SelectionData = {
+      filePath: "/vault/my folder/some note.md",
+      relativePath: "my folder/some note.md",
+      cursor: { line: 2, character: 0 },
+      selection: {
+        start: { line: 1, character: 0 },
+        end: { line: 3, character: 5 },
+        isEmpty: false,
+        text: "selected",
+      },
+    };
+    const params = buildAtMentionParams(data);
+    assert.deepStrictEqual(params, {
+      filePath: '"my folder/some note.md"',
+      lineStart: 1,
+      lineEnd: 3,
     });
   });
 });

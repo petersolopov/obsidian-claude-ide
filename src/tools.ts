@@ -80,11 +80,16 @@ interface AtMentionParams {
 }
 
 export function buildAtMentionParams(data: SelectionData): AtMentionParams {
+  // CLI doesn't handle spaces in filePath — quote to match @"file name.md" syntax
+  const filePath = data.relativePath.includes(" ")
+    ? `"${data.relativePath}"`
+    : data.relativePath;
+
   if (data.selection.isEmpty) {
-    return { filePath: data.filePath };
+    return { filePath };
   }
   return {
-    filePath: data.filePath,
+    filePath,
     // protocol uses 0-based lines; Obsidian getCursor() is already 0-based
     lineStart: data.selection.start.line,
     lineEnd: data.selection.end.line,
