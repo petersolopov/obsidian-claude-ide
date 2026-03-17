@@ -3,13 +3,19 @@ import assert from "node:assert";
 import { handleRpcMessage, buildAtMentionParams } from "../src/tools.ts";
 import type { ToolContext, RpcMessage, SelectionData } from "../src/tools.ts";
 
-const ctx = { app: {} as ToolContext["app"], latestSelection: null };
+const ctx = {
+  app: {} as ToolContext["app"],
+  version: "0.0.0-test",
+  latestSelection: null,
+};
 
 function rpc(
   method: string,
   params?: Record<string, unknown>,
 ): RpcMessage {
-  return { jsonrpc: "2.0", id: 1, method, params };
+  const msg: RpcMessage = { jsonrpc: "2.0", id: 1, method };
+  if (params) msg.params = params;
+  return msg;
 }
 
 describe("handleRpcMessage", () => {
@@ -23,6 +29,7 @@ describe("handleRpcMessage", () => {
     assert.strictEqual(result.protocolVersion, "2025-03-26");
     const info = result.serverInfo as Record<string, string>;
     assert.strictEqual(info.name, "claude-code-ide");
+    assert.strictEqual(info.version, "0.0.0-test");
   });
 
   it("initialize defaults protocolVersion", () => {

@@ -208,7 +208,7 @@ function handleToolCall(
 
 export interface RpcMessage {
   jsonrpc: string;
-  id: string | number;
+  id?: string | number | null;
   method: string;
   params?: Record<string, unknown>;
 }

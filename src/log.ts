@@ -5,5 +5,5 @@ export function log(level: "debug" | "error", ...args: unknown[]) {
     return;
   }
   const fn = level === "error" ? console.error : console.log;
-  fn("[obsidian-ide]", ...args);
+  fn("[claude-code-ide]", ...args);
 }

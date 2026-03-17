@@ -84,6 +84,13 @@ export function createIdeServer(options: ServerOptions): IdeServer {
         client.socket.destroy();
         clients.delete(client);
         break;
+      } else if (!frame.fin) {
+        // fragmented frames not supported — Claude Code CLI never sends them
+        log("error", "rejecting fragmented frame, opcode:", frame.opcode);
+        client.socket.write(createFrame(OPCODE.CLOSE, Buffer.alloc(0)));
+        client.socket.destroy();
+        clients.delete(client);
+        break;
       } else if (frame.opcode === OPCODE.TEXT) {
         try {
           const text = frame.payload.toString();
