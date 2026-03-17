@@ -19,6 +19,7 @@ export interface SelectionData {
 
 export interface ToolContext {
   app: App;
+  version: string;
   latestSelection: SelectionData | null;
 }
 
@@ -178,6 +179,7 @@ function handleToolCall(
 
       let file = ctx.app.vault.getAbstractFileByPath(relativePath);
       if (!(file instanceof TFile)) {
+        // fallback: CLI may pass just filename — linear scan is unavoidable here
         file =
           ctx.app.vault
             .getFiles()
@@ -226,7 +228,7 @@ export function handleRpcMessage(
           capabilities: { tools: {} },
           serverInfo: {
             name: "claude-code-ide",
-            version: "0.1.0",
+            version: ctx.version,
           },
         },
       };

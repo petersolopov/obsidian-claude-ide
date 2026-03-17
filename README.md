@@ -1,4 +1,4 @@
-# Obsidian IDE
+# Obsidian as IDE for Claude Code
 
 Minimal bridge between Obsidian and Claude Code — shares your selections and open files with the CLI, nothing more.
 

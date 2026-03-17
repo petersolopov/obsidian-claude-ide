@@ -1,4 +1,5 @@
-import { Plugin, MarkdownView, FileSystemAdapter } from "obsidian";
+import { Plugin, FileSystemAdapter } from "obsidian";
+import { log } from "./log.ts";
 import { EditorView, ViewUpdate } from "@codemirror/view";
 import { randomUUID } from "node:crypto";
 import { createIdeServer, IdeServer } from "./server.ts";
@@ -30,6 +31,7 @@ export default class ObsidianIdePlugin extends Plugin {
       onMessage: (msg) =>
         handleRpcMessage(msg, {
           app: this.app,
+          version: this.manifest.version,
           latestSelection: this.latestSelection,
         }),
     });
@@ -60,7 +62,7 @@ export default class ObsidianIdePlugin extends Plugin {
     this.addCommand({
       id: "send-to-claude",
       name: "Send to Claude",
-      editorCallback: (editor, view) => {
+      editorCallback: () => {
         const data = getSelectionData(this.app);
         if (!data) return;
 
@@ -72,9 +74,7 @@ export default class ObsidianIdePlugin extends Plugin {
       },
     });
 
-    console.log(
-      `claude-code-ide: listening on 127.0.0.1:${this.port}`,
-    );
+    log("debug", `listening on 127.0.0.1:${this.port}`);
   }
 
   onunload() {

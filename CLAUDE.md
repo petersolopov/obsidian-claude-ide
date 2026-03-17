@@ -30,7 +30,7 @@ Obsidian plugin that acts as an MCP server over WebSocket. Claude Code discovers
 
 ## naming
 
-Plugin name: `Obsidian IDE`, ID: `claude-code-ide`. In Claude Code `/ide` selector, "Obsidian" appears as the IDE — Obsidian IS the IDE that Claude Code connects to. That's why the plugin is named "Obsidian IDE", not "Claude IDE" (which would imply Claude is the IDE). ID uses "claude-code-ide" because community plugins prohibit "obsidian-" prefix, and the ID identifies the integration target. "Claude Code" in the description ensures search discoverability.
+Plugin name: `Claude Code IDE`, ID: `claude-code-ide`. Renamed from "Obsidian IDE" because community plugin review prohibits "Obsidian" in name, description, and ID. README header uses "Obsidian as IDE for Claude Code" for clarity. ID uses "claude-code-ide" because community plugins prohibit "obsidian-" prefix. In Claude Code `/ide` selector, "Obsidian" appears as the IDE — configured via `ideName` in the lock file.
 
 ## protocol reference
 
