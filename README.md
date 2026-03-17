@@ -16,7 +16,7 @@ Install with [BRAT](https://github.com/TfTHacker/obsidian42-brat):
 
 1. Install BRAT from Community Plugins
 2. BRAT settings → Add Beta plugin → `petersolopov/obsidian-claude-ide`
-3. Enable in Settings → Community plugins → toggle on Obsidian IDE
+3. Enable in Settings → Community plugins → toggle on Claude Code IDE
 4. In Claude Code: run `/ide` → select Obsidian
 
 <details>
@@ -63,7 +63,7 @@ npm run build
 cp main.js manifest.json /path/to/vault/.obsidian/plugins/claude-code-ide/
 ```
 
-Enable in Settings → Community plugins → toggle on Obsidian IDE.
+Enable in Settings → Community plugins → toggle on Claude Code IDE.
 
 ## See also
 
