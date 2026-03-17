@@ -40,7 +40,7 @@ GitHub Actions workflow (`.github/workflows/release.yml`) builds and publishes r
 git tag X.Y.Z && git push origin X.Y.Z
 ```
 
-Before tagging: bump version in `manifest.json`, `package.json`, and `versions.json`.
+Before tagging: bump version in `manifest.json`, `package.json`, `package-lock.json`, and `versions.json`.
 
 ## protocol reference
 
