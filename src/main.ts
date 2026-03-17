@@ -2,13 +2,13 @@ import { Plugin, FileSystemAdapter } from "obsidian";
 import { log } from "./log.ts";
 import { EditorView, ViewUpdate } from "@codemirror/view";
 import { randomUUID } from "node:crypto";
-import { createIdeServer, IdeServer } from "./server.ts";
+import { createIdeServer, type IdeServer } from "./server.ts";
 import { createLockFile, removeLockFile, cleanStaleLockFiles } from "./lock.ts";
 import {
   handleRpcMessage,
   getSelectionData,
   buildAtMentionParams,
-  SelectionData,
+  type SelectionData,
 } from "./tools.ts";
 
 export default class ObsidianIdePlugin extends Plugin {
