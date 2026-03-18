@@ -51,6 +51,14 @@ export default class ObsidianIdePlugin extends Plugin {
       }),
     );
 
+    // visibilitychange won't fire on macOS when window is visible but unfocused (e.g., side by side with terminal)
+    this.registerDomEvent(window, 'focus', () => {
+      // reset dedup so broadcastSelection() sends even if cursor hasn't moved —
+      // a new CLI session may have connected while the user was away
+      this.prevState = null;
+      this.scheduleBroadcast();
+    });
+
     this.registerEditorExtension(
       EditorView.updateListener.of((update: ViewUpdate) => {
         if (update.selectionSet || update.docChanged) {
