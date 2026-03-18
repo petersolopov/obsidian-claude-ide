@@ -1,4 +1,4 @@
-import { type App, MarkdownView, TFile, type FileSystemAdapter } from "obsidian";
+import { type App, MarkdownView, type FileSystemAdapter } from "obsidian";
 
 interface Position {
   line: number;
@@ -43,20 +43,6 @@ const TOOL_SCHEMAS = [
     name: "getWorkspaceFolders",
     description: "Get workspace folder paths",
     inputSchema: { type: "object", properties: {} },
-  },
-  {
-    name: "openFile",
-    description: "Open a file in Obsidian",
-    inputSchema: {
-      type: "object",
-      properties: {
-        filePath: {
-          type: "string",
-          description: "File name or path to open",
-        },
-      },
-      required: ["filePath"],
-    },
   },
 ];
 
@@ -134,11 +120,7 @@ function toolResult(
   return result;
 }
 
-function handleToolCall(
-  name: string,
-  args: Record<string, unknown>,
-  ctx: ToolContext,
-) {
+function handleToolCall(name: string, ctx: ToolContext) {
   switch (name) {
     case "getCurrentSelection": {
       const data = getSelectionData(ctx.app);
@@ -169,33 +151,6 @@ function handleToolCall(
     }
     case "getWorkspaceFolders": {
       return toolResult({ folders: [getBasePath(ctx.app)] });
-    }
-    case "openFile": {
-      const filePath = args.filePath as string;
-      const basePath = getBasePath(ctx.app);
-      const relativePath = filePath.startsWith(basePath + "/")
-        ? filePath.slice(basePath.length + 1)
-        : filePath;
-
-      let file = ctx.app.vault.getAbstractFileByPath(relativePath);
-      if (!(file instanceof TFile)) {
-        // fallback: CLI may pass just filename — linear scan is unavoidable here
-        file =
-          ctx.app.vault
-            .getFiles()
-            .find(
-              (f) => f.name === relativePath || f.basename === relativePath,
-            ) ?? null;
-      }
-      if (!(file instanceof TFile)) {
-        return toolResult(
-          { error: `File not found: ${filePath}` },
-          true,
-        );
-      }
-      // fire-and-forget: awaiting would require async through the entire RPC call chain
-      ctx.app.workspace.getLeaf().openFile(file);
-      return toolResult({ success: true, filePath: file.path });
     }
     default: {
       if (name in STUB_HANDLERS) {
@@ -243,8 +198,7 @@ export function handleRpcMessage(
     case "tools/call": {
       const params = msg.params || {};
       const name = params.name as string;
-      const args = (params.arguments || {}) as Record<string, unknown>;
-      const result = handleToolCall(name, args, ctx);
+      const result = handleToolCall(name, ctx);
       if (!result) {
         return {
           jsonrpc: "2.0",

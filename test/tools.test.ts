@@ -44,7 +44,7 @@ describe("handleRpcMessage", () => {
     const names = result.tools.map((t) => t.name);
     assert.ok(names.includes("getCurrentSelection"));
     assert.ok(names.includes("getOpenEditors"));
-    assert.ok(names.includes("openFile"));
+    assert.ok(names.includes("getWorkspaceFolders"));
   });
 
   it("unknown method returns error -32601", () => {
