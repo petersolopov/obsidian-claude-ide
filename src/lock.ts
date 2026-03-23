@@ -32,7 +32,7 @@ export function createLockFile(
     transport: "ws",
     authToken: data.authToken,
   });
-  writeFileSync(tmpPath, content);
+  writeFileSync(tmpPath, content, { mode: 0o600 });
   renameSync(tmpPath, lockPath);
   return lockPath;
 }

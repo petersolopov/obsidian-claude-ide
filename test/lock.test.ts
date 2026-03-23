@@ -5,6 +5,7 @@ import {
   readFileSync,
   readdirSync,
   writeFileSync,
+  statSync,
   rmSync,
 } from "node:fs";
 import { join } from "node:path";
@@ -37,6 +38,15 @@ describe("lock", () => {
     assert.strictEqual(data.transport, "ws");
     assert.strictEqual(data.authToken, "tok");
     assert.deepStrictEqual(data.workspaceFolders, ["/vault"]);
+  });
+
+  it("createLockFile sets file permissions to 0o600", { skip: process.platform === "win32" }, () => {
+    const path = createLockFile(
+      { port: 9999, pid: 123, workspaceFolders: ["/vault"], authToken: "tok" },
+      lockDir,
+    );
+    const mode = statSync(path).mode & 0o777;
+    assert.strictEqual(mode, 0o600);
   });
 
   it("createLockFile names file by port", () => {
