@@ -41,9 +41,11 @@ No diff view — edits appear directly in the file.
 
 ## Security
 
-The WebSocket server binds to 127.0.0.1, so only local connections are accepted and nothing is exposed to the network.
-Each session uses a unique authentication token stored in a lock file under `~/.claude/ide/`, ensuring only the Claude Code CLI can connect.
-All data stays on your machine and is never sent to external servers.
+- **Localhost only** — WebSocket server binds to `127.0.0.1`, no network exposure
+- **Per-session auth** — unique token via `crypto.randomUUID()`, verified on every connection
+- **Read-only** — plugin shares selections and open file names, never writes files or executes code
+- **Zero runtime dependencies** — single bundled `main.js`, no third-party code at runtime
+- **No shared secrets** — auth token readable only by your OS user, discarded on restart
 
 ## Tips
 
