@@ -1,6 +1,6 @@
 # Obsidian as IDE for Claude Code
 
-Minimal bridge between Obsidian and Claude Code — shares your selections and open files with the CLI, nothing more.
+Minimal bridge between Obsidian and Claude Code — shares real-time editor context with the CLI, nothing more.
 
 - Zero config — install, enable, `/ide`, done
 - Zero dependencies — single `main.js`, no runtime deps
@@ -66,6 +66,30 @@ cp main.js manifest.json /path/to/vault/.obsidian/plugins/claude-code-ide/
 ```
 
 Enable in Settings → Community plugins → toggle on Claude Code IDE.
+
+## FAQ
+
+**Why do I need this? Claude Code can already read files in my vault.**
+
+> It can, and it still does. This plugin adds real-time editor context — Claude Code continuously sees which file is open and what text you selected. Instead of "I'm editing notes/project/todo.md, rewrite the second paragraph" you just say "rewrite the second paragraph".
+
+**How is this different from Obsidian CLI?**
+
+> Different layers. Obsidian CLI lets Claude Code run commands — open files, search the vault, rename with automatic link updates. This plugin shares real-time editor context — which file is open, what's selected.
+
+**Is my vault data sent to Anthropic?**
+
+> Yes. Claude Code sends your prompts and context to Anthropic's API — that's how it works, with or without this plugin. If your vault has personal notes you'd rather keep private, point Claude Code at a separate project vault instead.
+
+**Does it work on mobile?**
+
+> No. The plugin needs Node.js APIs that only Obsidian desktop provides. Claude Code itself is a CLI tool, so desktop on both sides.
+
+**Does it work with Gemini CLI / Codex / other agents?**
+
+> No. This plugin implements Claude Code's protocol only — zero dependencies, single file, instant startup. For multi-agent support (Gemini CLI, Codex, OpenCode) check out [Agent Client](https://github.com/RAIT-09/obsidian-agent-client).
+
+More perspectives in [the Reddit thread](https://www.reddit.com/r/ObsidianMD/comments/1rz89qh/connect_obsidian_to_claude_code/).
 
 ## See also
 
