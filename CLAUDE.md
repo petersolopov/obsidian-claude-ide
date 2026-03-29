@@ -4,15 +4,26 @@
 - `npm run build` — production build
 - `npm test` — run unit/integration tests
 - `npm run typecheck` — TypeScript type check, run before committing
+- `npm run obsidian:install-plugin` — build → copy to vault → enable. Requires `.env` with `OBSIDIAN_VAULT`
+
+## environment
+
+`.env` (gitignored, create manually):
+
+```
+OBSIDIAN_VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/your-vault"
+OBSIDIAN_TEST_VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/your-test-vault"
+```
+
+- `OBSIDIAN_VAULT` — vault where the plugin is installed for development
+- `OBSIDIAN_TEST_VAULT` — vault with BRAT, for testing release installs
 
 ## dev workflow
 
-esbuild outputs `main.js` to the project root. Deploy by copying `main.js` and `manifest.json` to the vault plugin folder.
-
-After deploying, reload the plugin without restarting Obsidian:
+esbuild outputs `main.js` to the project root.
 
 ```bash
-obsidian plugin:reload id=obsidian-claude-ide
+npm run build && npm run obsidian:install-plugin
 ```
 
 ## debugging

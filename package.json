@@ -12,7 +12,8 @@
     "build": "node esbuild.config.js",
     "dev": "node esbuild.config.js --watch",
     "test": "node --experimental-strip-types --import ./test/obsidian-loader.ts --test test/**/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "obsidian:install-plugin": "bash scripts/install-plugin.sh"
   },
   "devDependencies": {
     "@codemirror/state": "^6.0.0",

@@ -2,3 +2,4 @@ node_modules/
 main.js
 *.js.map
 docs/
+.env
