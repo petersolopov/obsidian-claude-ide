@@ -43,15 +43,69 @@ Obsidian plugin that acts as an MCP server over WebSocket. Claude Code discovers
 
 Plugin name: `Claude Code IDE`, ID: `claude-code-ide`. Renamed from "Obsidian IDE" because community plugin review prohibits "Obsidian" in name, description, and ID. README header uses "Obsidian as IDE for Claude Code" for clarity. ID uses "claude-code-ide" because community plugins prohibit "obsidian-" prefix. In Claude Code `/ide` selector, "Obsidian" appears as the IDE — configured via `ideName` in the lock file.
 
-## release
+## regression
 
-GitHub Actions workflow (`.github/workflows/release.yml`) builds and publishes releases automatically. Push a tag to trigger:
+Requires a second Claude Code session from the vault directory, connected via `/ide`.
 
 ```bash
-git tag X.Y.Z && git push origin X.Y.Z
+npm run typecheck
+npm test
+npm run build && npm run obsidian:install-plugin
 ```
 
-Before tagging: bump version in `manifest.json`, `package.json`, `package-lock.json`, and `versions.json`.
+Enable debug capture with `obsidian dev:debug on`. Check console for `[DEBUG] [claude-code-ide] vX.Y.Z listening on 127.0.0.1:PORT`.
+
+- `/ide` → select Obsidian
+- select text → ask "what do I have selected?"
+- switch to another file → ask which file is open
+- Send to Claude (Cmd+P) without selection → sends whole file
+- Send to Claude with selection → sends file with `:L` line number
+- open file with spaces in name → select text → verify path is correct
+
+## release
+
+Work happens in `release/X.Y.Z` branch (create when first commit appears). Master always matches the latest release.
+
+**1. Regression** — run the full regression checklist above
+
+**2. Prod build**
+
+```bash
+npm run build -- --production && npm run obsidian:install-plugin
+```
+
+Verify console is silent (no debug logs). Repeat regression.
+
+**3. Version bump**
+
+Bump in `manifest.json`, `package.json`, `package-lock.json`, `versions.json`. Commit.
+
+**4. Push, merge, tag**
+
+```bash
+git push origin release/X.Y.Z
+git checkout master
+git merge release/X.Y.Z --no-ff -m "release: X.Y.Z"
+git tag X.Y.Z
+git push origin master --tags
+```
+
+**5. CI + release assets**
+
+`gh run watch` — wait for green. Download `main.js` from release, verify size matches local prod build.
+
+**6. BRAT regression**
+
+Update plugin in test vault via BRAT. Verify version in `$OBSIDIAN_TEST_VAULT/.obsidian/plugins/claude-code-ide/manifest.json`. Repeat regression.
+
+**7. Cleanup**
+
+```bash
+git branch -d release/X.Y.Z
+git push origin --delete release/X.Y.Z
+```
+
+Update project tracker.
 
 ## protocol reference
 
