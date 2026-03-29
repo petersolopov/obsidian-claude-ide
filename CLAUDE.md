@@ -4,15 +4,15 @@
 - `npm run build` — production build
 - `npm test` — run unit/integration tests
 - `npm run typecheck` — TypeScript type check, run before committing
-- `npm run obsidian:install-plugin` — build → copy to vault → enable. Requires `.env` with `OBSIDIAN_VAULT`
+- `npm run obsidian:install-plugin` — copy `main.js` and `manifest.json` to vault, reload plugin. Requires `.env` with `OBSIDIAN_VAULT`
 
 ## environment
 
 `.env` (gitignored, create manually):
 
 ```
-OBSIDIAN_VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/your-vault"
-OBSIDIAN_TEST_VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/your-test-vault"
+OBSIDIAN_VAULT="path/to/your-vault"
+OBSIDIAN_TEST_VAULT="path/to/your-test-vault"
 ```
 
 - `OBSIDIAN_VAULT` — vault where the plugin is installed for development
@@ -61,6 +61,7 @@ Enable debug capture with `obsidian dev:debug on`. Check console for `[DEBUG] [c
 - Send to Claude (Cmd+P) without selection → sends whole file
 - Send to Claude with selection → sends file with `:L` line number
 - open file with spaces in name → select text → verify path is correct
+- reload plugin → verify old lock file deleted, new one created with `0o600` permissions
 
 ## release
 
@@ -74,7 +75,7 @@ Work happens in `release/X.Y.Z` branch (create when first commit appears). Maste
 npm run build -- --production && npm run obsidian:install-plugin
 ```
 
-Verify console is silent (no debug logs). Repeat regression.
+Verify console is silent (no debug logs). Repeat manual checks from regression (skip typecheck/test/build steps).
 
 **3. Version bump**
 

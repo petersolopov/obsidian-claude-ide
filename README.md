@@ -62,10 +62,9 @@ git clone https://github.com/petersolopov/obsidian-claude-ide
 cd obsidian-claude-ide
 npm install
 npm run build
-cp main.js manifest.json /path/to/vault/.obsidian/plugins/claude-code-ide/
 ```
 
-Enable in Settings → Community plugins → toggle on Claude Code IDE.
+Copy `main.js` and `manifest.json` to your vault's `.obsidian/plugins/claude-code-ide/` folder, or use `npm run obsidian:install-plugin` (requires `.env` with `OBSIDIAN_VAULT` path — see `CLAUDE.md`).
 
 ## FAQ
 
