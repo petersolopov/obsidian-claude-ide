@@ -1,7 +1,7 @@
-const debug = Boolean(process.env.OBSIDIAN_IDE_DEBUG);
+declare const DEBUG: boolean;
 
 export function log(level: "debug" | "error", ...args: unknown[]) {
-  if (level !== "error" && !debug) {
+  if (level !== "error" && !DEBUG) {
     return;
   }
   const fn = level === "error" ? console.error : console.debug;

@@ -82,7 +82,7 @@ export default class ObsidianIdePlugin extends Plugin {
       },
     });
 
-    log("debug", `listening on 127.0.0.1:${this.port}`);
+    log("debug", `v${this.manifest.version} listening on 127.0.0.1:${this.port}`);
   }
 
   onunload() {
