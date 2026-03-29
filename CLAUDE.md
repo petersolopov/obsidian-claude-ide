@@ -64,7 +64,7 @@ Enable debug capture with `obsidian dev:debug on`. Check console for `[DEBUG] [c
 
 ## release
 
-Work happens in `release/X.Y.Z` branch (create when first commit appears). Master always matches the latest release.
+Work happens in `release/X.Y.Z` branch (create when first commit appears). Master always matches the latest release. After a release, never commit directly to master — create `release/X.Y.Z` for the next version first.
 
 **1. Regression** — run the full regression checklist above
 
