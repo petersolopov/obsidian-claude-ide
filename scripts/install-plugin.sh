@@ -19,13 +19,15 @@ fi
 
 OBSIDIAN_VAULT_NAME="${OBSIDIAN_VAULT_NAME:-$(basename "$OBSIDIAN_VAULT")}"
 OBSIDIAN_VAULT_ARG="vault=$OBSIDIAN_VAULT_NAME"
-PLUGIN_DIR="$OBSIDIAN_VAULT/.obsidian/plugins/claude-code-ide"
+OBSIDIAN_CONFIG_DIR="$OBSIDIAN_VAULT/.obsidian"
+PLUGIN_DIR="$OBSIDIAN_CONFIG_DIR/plugins/claude-code-ide"
+COMMUNITY_PLUGINS_JSON="$OBSIDIAN_CONFIG_DIR/community-plugins.json"
 MAIN_JS="$PROJECT_DIR/main.js"
 MANIFEST_JSON="$PROJECT_DIR/manifest.json"
 
-if [ ! -d "$PLUGIN_DIR" ]; then
-  echo "Plugin directory not found: $PLUGIN_DIR"
-  echo "Make sure Obsidian vault exists and the plugin was installed at least once."
+if [ ! -d "$OBSIDIAN_CONFIG_DIR" ]; then
+  echo "Obsidian config directory not found: $OBSIDIAN_CONFIG_DIR"
+  echo "Make sure OBSIDIAN_VAULT points to an existing Obsidian vault."
   exit 1
 fi
 
@@ -34,7 +36,31 @@ if [ ! -f "$MAIN_JS" ] || [ ! -f "$MANIFEST_JSON" ]; then
   exit 1
 fi
 
+mkdir -p "$PLUGIN_DIR"
 cp "$MAIN_JS" "$MANIFEST_JSON" "$PLUGIN_DIR"
+
+# Obsidian only loads local community plugins listed in community-plugins.json.
+node -e '
+const fs = require("node:fs");
+const path = process.argv[1];
+const pluginId = process.argv[2];
+let ids = [];
+
+try {
+  ids = JSON.parse(fs.readFileSync(path, "utf8"));
+} catch (error) {
+  if (error.code !== "ENOENT") throw error;
+}
+
+if (!Array.isArray(ids)) {
+  throw new Error(`${path} must contain a JSON array`);
+}
+
+if (!ids.includes(pluginId)) {
+  ids.push(pluginId);
+  fs.writeFileSync(path, `${JSON.stringify(ids, null, 2)}\n`);
+}
+' "$COMMUNITY_PLUGINS_JSON" "claude-code-ide"
 
 run_obsidian() {
   local output
