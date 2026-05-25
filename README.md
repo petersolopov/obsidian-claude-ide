@@ -64,7 +64,7 @@ npm install
 npm run build
 ```
 
-Copy `main.js` and `manifest.json` to your vault's `.obsidian/plugins/claude-code-ide/` folder, or use `npm run obsidian:install-plugin` (requires `.env` with `OBSIDIAN_VAULT` path — see `CLAUDE.md`).
+Copy `main.js` and `manifest.json` to your vault's `.obsidian/plugins/claude-code-ide/` folder, or use `npm run obsidian:install-plugin` (requires `.env` with `OBSIDIAN_VAULT` path — see `AGENTS.md`).
 
 ## FAQ
 
