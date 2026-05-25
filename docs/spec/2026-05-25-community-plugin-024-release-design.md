@@ -35,8 +35,9 @@ accepted limitation.
 
 ## Step-by-step implementation strategy
 
-1. Update `.gitignore` so `docs/spec/` can contain committed NeoPlan
-   design documents while other ad hoc `docs/` content stays ignored
+1. Keep the `.gitignore` exception that allows `docs/spec/` to contain
+   committed NeoPlan design documents while other ad hoc `docs/` content
+   stays ignored. This was completed with the design-doc commit.
 
 2. Update `src/lock.ts` to parse existing lock files through a small
    typed boundary:
@@ -59,12 +60,17 @@ accepted limitation.
    - Import `activeWindow` in `src/server.ts`
    - Use `activeWindow.setInterval` and `activeWindow.clearInterval`
    - Update the test `obsidian` loader stub to export `activeWindow`
+     with `setTimeout`, `clearTimeout`, `setInterval`, and
+     `clearInterval`
 
 5. Update test runner script:
    - Remove `--experimental-strip-types` from `npm test`
    - Keep the existing Obsidian loader import
 
 6. Update release workflow:
+   - Keep `contents: write`
+   - Add `id-token: write`
+   - Add `attestations: write`
    - Use Node `24`
    - Run `npm run typecheck`
    - Run `npm test`
@@ -98,28 +104,41 @@ accepted limitation.
     - `npm test`
     - `npm run build -- --production`
 
-11. Commit the implementation and version bump in logical commits
+11. Run manual Obsidian regression before publishing:
+    - `npm run build -- --production && npm run obsidian:install-plugin`
+    - Verify the production console is silent
+    - Connect Claude Code with `/ide`
+    - Verify open-file context and selected-text context
+    - Verify "Send to Claude" with and without selection
+    - Verify a file with spaces in its name still produces a valid path
+    - Reload the plugin and verify lock-file cleanup/recreation behavior
 
-12. Publish release:
+12. Final code review:
+    - Review the full diff for behavioral regressions, docs drift, and
+      release-flow inconsistencies
+    - Fix findings before committing and publishing the release
+    - Rerun targeted checks after fixes
+
+13. Commit the implementation and version bump in logical commits
+
+14. Publish release:
     - Push `release/0.2.4`
     - Merge to `master` according to the project release flow
     - Tag `0.2.4`
     - Push `master` and tags
 
-13. Final code review:
-    - Review the full diff for behavioral regressions, docs drift, and
-      release-flow inconsistencies
-    - Fix findings before publishing the release
-
-14. Deploy and verify:
+15. Deploy and verify:
     - Wait for GitHub Actions with `gh run watch`
     - Confirm the GitHub Release exists and has non-empty notes
     - Download release `main.js` and `manifest.json`
     - Compare sha256 with a clean build from tag `0.2.4`
     - Verify artifact attestation with `gh attestation verify`
     - Check the Obsidian Community page and dashboard for scorecard changes
+    - After the Community directory indexes `0.2.4`, install or update the
+      plugin from Community Plugins in the test vault
+    - Verify the installed test-vault plugin manifest reports `0.2.4`
 
-15. Retro:
+16. Retro:
     - Record what scorecard warnings were resolved
     - Record any remaining false positives or intentionally accepted
       warnings
@@ -131,9 +150,11 @@ The source fixes should land before the version bump. The version bump
 should land before tagging. The tag should be pushed only after local
 typecheck, tests, and production build pass.
 
+Manual Obsidian regression should happen before pushing the release tag.
 Release asset verification depends on the GitHub Actions release job.
-Community scorecard verification depends on Obsidian processing the new
-release, so it may lag behind the GitHub release.
+Community scorecard and Community install/update verification depend on
+Obsidian processing the new release, so they may lag behind the GitHub
+release.
 
 The design document requires a `.gitignore` exception for `docs/spec/`
 before it can be committed.
@@ -154,6 +175,10 @@ Avoid adding timer injection solely for this warning.
 `gh release create --generate-notes` depends on commit history between
 tags. If generated notes are too sparse, edit the release body after CI
 or add a concise manual notes prefix in the workflow later.
+
+Removing `--experimental-strip-types` assumes local development uses
+Node `22.18` or newer. CI will use Node `24`, but AGENTS.md should keep
+the local runtime prerequisite visible.
 
 ## Testing strategy
 
@@ -178,6 +203,9 @@ gh attestation verify main.js -R petersolopov/obsidian-claude-ide
 Then compare sha256 of the release assets against a clean production
 build from tag `0.2.4`.
 
+Before publishing the tag, install the production build into the
+development vault and run the manual Obsidian regression checklist.
+
 ## Docs changes required
 
 README needs the install section updated for Community Plugins and the
@@ -185,7 +213,8 @@ BRAT-first flow removed.
 
 AGENTS.md needs the release checklist updated for GitHub CLI release
 creation, release notes, artifact attestations, release asset checksum
-verification, and Community install/update verification.
+verification, manual Obsidian regression before tag push, and Community
+install/update verification after the directory indexes the new release.
 
 The project tracker should be updated after `0.2.4` is published and
 verified.
