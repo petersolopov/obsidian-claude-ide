@@ -16,7 +16,9 @@ export default class ObsidianIdePlugin extends Plugin {
   private port = 0;
   private latestSelection: SelectionData | null = null;
   private prevState: string | null = null;
-  private broadcastTimer: ReturnType<typeof setTimeout> | null = null;
+  // Obsidian exposes activeWindow as a global; the npm types do not export it as ESM.
+  private broadcastTimer: ReturnType<typeof activeWindow.setTimeout> | null = null;
+  private broadcastTimerWindow: Window | null = null;
 
   async onload() {
     cleanStaleLockFiles();
@@ -52,7 +54,7 @@ export default class ObsidianIdePlugin extends Plugin {
     );
 
     // visibilitychange won't fire on macOS when window is visible but unfocused (e.g., side by side with terminal)
-    this.registerDomEvent(window, 'focus', () => {
+    this.registerDomEvent(activeWindow, "focus", () => {
       // reset dedup so broadcastSelection() sends even if cursor hasn't moved —
       // a new CLI session may have connected while the user was away
       this.prevState = null;
@@ -87,7 +89,9 @@ export default class ObsidianIdePlugin extends Plugin {
 
   onunload() {
     if (this.broadcastTimer !== null) {
-      clearTimeout(this.broadcastTimer);
+      this.broadcastTimerWindow?.clearTimeout(this.broadcastTimer);
+      this.broadcastTimer = null;
+      this.broadcastTimerWindow = null;
     }
     this.server?.stop();
     if (this.port) {
@@ -97,10 +101,13 @@ export default class ObsidianIdePlugin extends Plugin {
 
   private scheduleBroadcast() {
     if (this.broadcastTimer !== null) {
-      clearTimeout(this.broadcastTimer);
+      this.broadcastTimerWindow?.clearTimeout(this.broadcastTimer);
     }
-    this.broadcastTimer = setTimeout(() => {
+    const timerWindow = activeWindow;
+    this.broadcastTimerWindow = timerWindow;
+    this.broadcastTimer = timerWindow.setTimeout(() => {
       this.broadcastTimer = null;
+      this.broadcastTimerWindow = null;
       this.broadcastSelection();
     }, 100);
   }

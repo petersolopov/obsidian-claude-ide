@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -16,14 +18,22 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "24"
 
       - run: npm ci
 
+      - run: npm run typecheck
+
+      - run: npm test
+
       - run: npm run build -- --production
 
-      - uses: softprops/action-gh-release@v2
+      - uses: actions/attest@v4
         with:
-          files: |
+          subject-path: |
             main.js
             manifest.json
+
+      - run: gh release create "$GITHUB_REF_NAME" main.js manifest.json --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
+        env:
+          GH_TOKEN: ${{ github.token }}

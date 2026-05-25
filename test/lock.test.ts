@@ -80,10 +80,66 @@ describe("lock", () => {
     assert.strictEqual(readdirSync(lockDir).length, 0);
   });
 
-  it("cleanStaleLockFiles skips non-Obsidian locks", () => {
+  it("cleanStaleLockFiles removes malformed JSON", () => {
+    writeFileSync(join(lockDir, "4444.lock"), "{not-json");
+    cleanStaleLockFiles(lockDir);
+    assert.strictEqual(readdirSync(lockDir).length, 0);
+  });
+
+  it("cleanStaleLockFiles removes Obsidian lock without numeric pid", () => {
+    writeFileSync(
+      join(lockDir, "3333.lock"),
+      JSON.stringify({
+        pid: "not-a-number",
+        ideName: "Obsidian",
+        transport: "ws",
+        authToken: "tok",
+        workspaceFolders: ["/vault"],
+      }),
+    );
+    cleanStaleLockFiles(lockDir);
+    assert.strictEqual(readdirSync(lockDir).length, 0);
+  });
+
+  it("cleanStaleLockFiles removes Obsidian lock with zero pid", () => {
+    writeFileSync(
+      join(lockDir, "2222.lock"),
+      JSON.stringify({
+        pid: 0,
+        ideName: "Obsidian",
+        transport: "ws",
+        authToken: "tok",
+        workspaceFolders: ["/vault"],
+      }),
+    );
+    cleanStaleLockFiles(lockDir);
+    assert.strictEqual(readdirSync(lockDir).length, 0);
+  });
+
+  it("cleanStaleLockFiles removes Obsidian lock with negative pid", () => {
+    writeFileSync(
+      join(lockDir, "1111.lock"),
+      JSON.stringify({
+        pid: -1,
+        ideName: "Obsidian",
+        transport: "ws",
+        authToken: "tok",
+        workspaceFolders: ["/vault"],
+      }),
+    );
+    cleanStaleLockFiles(lockDir);
+    assert.strictEqual(readdirSync(lockDir).length, 0);
+  });
+
+  it("cleanStaleLockFiles skips non-Obsidian locks with unusable pid", () => {
     writeFileSync(
       join(lockDir, "8888.lock"),
-      JSON.stringify({ pid: 999999, ideName: "VSCode" }),
+      JSON.stringify({
+        pid: "not-useful-to-obsidian",
+        ideName: "VSCode",
+        transport: "ws",
+        workspaceFolders: ["/vault"],
+      }),
     );
     cleanStaleLockFiles(lockDir);
     assert.strictEqual(readdirSync(lockDir).length, 1);

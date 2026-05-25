@@ -1,7 +1,7 @@
 ## commands
 
 - `npm run dev` — watch mode, rebuilds on changes
-- `npm run build` — production build
+- `npm run build` — debug build
 - `npm test` — run unit/integration tests
 - `npm run typecheck` — TypeScript type check, run before committing
 - `npm run obsidian:install-plugin` — copy `main.js` and `manifest.json` to vault, reload plugin. Requires `.env` with `OBSIDIAN_VAULT`
@@ -16,7 +16,7 @@ OBSIDIAN_TEST_VAULT="path/to/your-test-vault"
 ```
 
 - `OBSIDIAN_VAULT` — vault where the plugin is installed for development
-- `OBSIDIAN_TEST_VAULT` — vault with BRAT, for testing release installs
+- `OBSIDIAN_TEST_VAULT` — vault used for Community Plugin install/update testing
 
 ## dev workflow
 
@@ -67,9 +67,22 @@ Enable debug capture with `obsidian dev:debug on`. Check console for `[DEBUG] [c
 
 Work happens in `release/X.Y.Z` branch (create when first commit appears). Master always matches the latest release. After a release, never commit directly to master — create `release/X.Y.Z` for the next version first.
 
-**1. Regression** — run the full regression checklist above
+The release workflow runs on pushed tags. It uses Node 24, runs typecheck,
+tests, and a production build, creates artifact attestations for `main.js`
+and `manifest.json`, then creates the GitHub Release with official
+`gh release create --verify-tag --generate-notes`.
 
-**2. Prod build**
+The README title intentionally does not match `manifest.json`. The title
+`Obsidian as IDE for Claude Code` explains the product better, so that
+Community Plugin scorecard warning is accepted.
+
+Bump in `manifest.json`, `package.json`, `package-lock.json`, `versions.json`.
+Commit the release candidate.
+
+Before pushing the release tag, run the full regression checklist above
+against the bumped release candidate.
+
+Then run a production build and install it into the development vault:
 
 ```bash
 npm run build -- --production && npm run obsidian:install-plugin
@@ -77,11 +90,7 @@ npm run build -- --production && npm run obsidian:install-plugin
 
 Verify console is silent (no debug logs). Repeat manual checks from regression (skip typecheck/test/build steps).
 
-**3. Version bump**
-
-Bump in `manifest.json`, `package.json`, `package-lock.json`, `versions.json`. Commit.
-
-**4. Push, merge, tag**
+Push, merge, and tag:
 
 ```bash
 git push origin release/X.Y.Z
@@ -91,15 +100,36 @@ git tag X.Y.Z
 git push origin master --tags
 ```
 
-**5. CI + release assets**
+Wait for CI and inspect the release:
 
-`gh run watch` — wait for green. Download `main.js` from release, verify size matches local prod build.
+```bash
+gh run watch
+gh release view X.Y.Z
+```
 
-**6. BRAT regression**
+Download release assets and verify provenance:
 
-Update plugin in test vault via BRAT. Verify version in `$OBSIDIAN_TEST_VAULT/.obsidian/plugins/claude-code-ide/manifest.json`. Repeat regression.
+```bash
+RELEASE_DIR=$(mktemp -d)
+gh release download X.Y.Z --dir "$RELEASE_DIR" --pattern main.js --pattern manifest.json
+gh attestation verify "$RELEASE_DIR/main.js" -R petersolopov/obsidian-claude-ide
+gh attestation verify "$RELEASE_DIR/manifest.json" -R petersolopov/obsidian-claude-ide
+```
 
-**7. Cleanup**
+Compare release asset sha256 values against a clean production build from
+tag `X.Y.Z`.
+
+After the Obsidian Community Plugin directory indexes the release, install
+or update the plugin from Community Plugins in the test vault. Verify the
+installed manifest reports `X.Y.Z`:
+
+```bash
+node -e "console.log(JSON.parse(require('fs').readFileSync(process.env.OBSIDIAN_TEST_VAULT + '/.obsidian/plugins/claude-code-ide/manifest.json', 'utf8')).version)"
+```
+
+Repeat the manual regression checklist against the Community Plugin install.
+
+Cleanup:
 
 ```bash
 git branch -d release/X.Y.Z
