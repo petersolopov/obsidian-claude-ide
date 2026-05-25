@@ -17,6 +17,8 @@ if [ -z "${OBSIDIAN_VAULT:-}" ]; then
   exit 1
 fi
 
+OBSIDIAN_VAULT_NAME="${OBSIDIAN_VAULT_NAME:-$(basename "$OBSIDIAN_VAULT")}"
+OBSIDIAN_VAULT_ARG="vault=$OBSIDIAN_VAULT_NAME"
 PLUGIN_DIR="$OBSIDIAN_VAULT/.obsidian/plugins/claude-code-ide"
 MAIN_JS="$PROJECT_DIR/main.js"
 MANIFEST_JSON="$PROJECT_DIR/manifest.json"
@@ -32,7 +34,24 @@ if [ ! -f "$MAIN_JS" ] || [ ! -f "$MANIFEST_JSON" ]; then
   exit 1
 fi
 
-obsidian plugin:disable id=claude-code-ide
 cp "$MAIN_JS" "$MANIFEST_JSON" "$PLUGIN_DIR"
-obsidian plugin:enable id=claude-code-ide
-obsidian plugin:reload id=claude-code-ide
+
+run_obsidian() {
+  local output
+  if ! output="$(obsidian "$@" 2>&1)"; then
+    printf '%s\n' "$output" >&2
+    return 1
+  fi
+  if [[ "$output" == Error:* ]]; then
+    printf '%s\n' "$output" >&2
+    return 1
+  fi
+  if [ -n "$output" ]; then
+    printf '%s\n' "$output"
+  fi
+}
+
+if ! run_obsidian plugin:reload "$OBSIDIAN_VAULT_ARG" id=claude-code-ide; then
+  echo "Plugin-specific reload failed; reloading vault $OBSIDIAN_VAULT_NAME"
+  run_obsidian reload "$OBSIDIAN_VAULT_ARG"
+fi

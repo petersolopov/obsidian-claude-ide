@@ -12,10 +12,12 @@
 
 ```
 OBSIDIAN_VAULT="path/to/your-vault"
+OBSIDIAN_VAULT_NAME="vault-name"
 OBSIDIAN_TEST_VAULT="path/to/your-test-vault"
 ```
 
 - `OBSIDIAN_VAULT` — vault where the plugin is installed for development
+- `OBSIDIAN_VAULT_NAME` — optional Obsidian CLI vault name, defaults to the basename of `OBSIDIAN_VAULT`
 - `OBSIDIAN_TEST_VAULT` — vault used for Community Plugin install/update testing
 
 ## dev workflow
