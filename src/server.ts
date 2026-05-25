@@ -25,7 +25,9 @@ interface ServerOptions {
 export function createIdeServer(options: ServerOptions): IdeServer {
   const clients = new Set<Client>();
   let server: Server | null = null;
-  let pingInterval: ReturnType<typeof setInterval> | null = null;
+  // Obsidian exposes activeWindow as a global; the npm types do not export it as ESM.
+  let pingInterval: ReturnType<typeof activeWindow.setInterval> | null = null;
+  let pingIntervalWindow: Window | null = null;
 
   function handleUpgrade(socket: Socket, headers: IncomingHttpHeaders) {
     log("debug", "upgrade headers:", JSON.stringify(headers));
@@ -144,7 +146,9 @@ export function createIdeServer(options: ServerOptions): IdeServer {
         server.listen(0, "127.0.0.1", () => {
           const addr = server!.address() as { port: number };
 
-          pingInterval = setInterval(() => {
+          const timerWindow = activeWindow;
+          pingIntervalWindow = timerWindow;
+          pingInterval = timerWindow.setInterval(() => {
             for (const client of clients) {
               if (!client.alive) {
                 client.socket.destroy();
@@ -164,7 +168,11 @@ export function createIdeServer(options: ServerOptions): IdeServer {
     },
 
     stop() {
-      if (pingInterval) clearInterval(pingInterval);
+      if (pingInterval !== null) {
+        pingIntervalWindow?.clearInterval(pingInterval);
+        pingInterval = null;
+        pingIntervalWindow = null;
+      }
       for (const client of clients) {
         client.socket.destroy();
       }

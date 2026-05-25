@@ -10,23 +10,18 @@ https://github.com/user-attachments/assets/79c7e68f-accd-42a8-9508-6d5953aa90c4
 
 ## Install
 
-> Community plugin submission is pending review.
+Install from Obsidian Community Plugins:
 
-Install with [BRAT](https://github.com/TfTHacker/obsidian42-brat):
-
-1. Install BRAT from Community Plugins
-2. BRAT settings → Add Beta plugin → `petersolopov/obsidian-claude-ide`
-3. Enable in Settings → Community plugins → toggle on Claude Code IDE
+1. Open Settings → Community plugins → Browse
+2. Search for `Claude Code IDE`
+3. Install and enable the plugin
 4. In Claude Code: run `/ide` → select Obsidian
 
-<details>
-<summary>Manual install</summary>
+Manual fallback:
 
 1. Download `main.js` and `manifest.json` from the [latest release](https://github.com/petersolopov/obsidian-claude-ide/releases/latest)
 2. Create folder `claude-code-ide` in your vault's `.obsidian/plugins/` and put both files there
 3. Enable and connect as above
-
-</details>
 
 ## How it works
 
@@ -62,10 +57,9 @@ git clone https://github.com/petersolopov/obsidian-claude-ide
 cd obsidian-claude-ide
 npm install
 npm run build
-cp main.js manifest.json /path/to/vault/.obsidian/plugins/claude-code-ide/
 ```
 
-Enable in Settings → Community plugins → toggle on Claude Code IDE.
+Copy `main.js` and `manifest.json` to your vault's `.obsidian/plugins/claude-code-ide/` folder, or use `npm run obsidian:install-plugin` (requires `.env` with `OBSIDIAN_VAULT` path — see `AGENTS.md`).
 
 ## FAQ
 

@@ -7,6 +7,32 @@ import type { IdeServer } from "../src/server.ts";
 import { parseFrame, OPCODE } from "../src/websocket.ts";
 
 const AUTH_TOKEN = "test-token-123";
+const originalActiveWindow = activeWindow;
+
+function setActiveWindowForTest(window: Window) {
+  (globalThis as typeof globalThis & { activeWindow: Window }).activeWindow =
+    window;
+}
+
+function createIntervalWindow() {
+  const intervals: number[] = [];
+  const clearedIntervals: number[] = [];
+  let nextInterval = 1;
+
+  const window = {
+    setInterval: () => {
+      const interval = nextInterval;
+      nextInterval += 1;
+      intervals.push(interval);
+      return interval;
+    },
+    clearInterval: (interval: number) => {
+      clearedIntervals.push(interval);
+    },
+  } as unknown as Window;
+
+  return { window, intervals, clearedIntervals };
+}
 
 function createMaskedFrame(opcode: number, data: string | Buffer): Buffer {
   const payload = typeof data === "string" ? Buffer.from(data) : data;
@@ -94,6 +120,7 @@ describe("ide server", () => {
     }
     sockets = [];
     server?.stop();
+    setActiveWindowForTest(originalActiveWindow);
   });
 
   it("accepts WebSocket connection and responds to initialize RPC", async () => {
@@ -217,6 +244,25 @@ describe("ide server", () => {
     assert.ok(frame);
     assert.strictEqual(frame.opcode, OPCODE.PONG);
     assert.strictEqual(frame.payload.toString(), "heartbeat");
+  });
+
+  it("clears ping interval with the window that created it", async () => {
+    const firstWindow = createIntervalWindow();
+    const secondWindow = createIntervalWindow();
+    setActiveWindowForTest(firstWindow.window);
+
+    server = createIdeServer({
+      authToken: AUTH_TOKEN,
+      onMessage: () => ({}),
+    });
+
+    await server.start();
+    setActiveWindowForTest(secondWindow.window);
+    server.stop();
+
+    assert.deepStrictEqual(firstWindow.intervals, [1]);
+    assert.deepStrictEqual(firstWindow.clearedIntervals, [1]);
+    assert.deepStrictEqual(secondWindow.clearedIntervals, []);
   });
 
   it("rejects connection with wrong auth token", async () => {

@@ -1,6 +1,6 @@
 {
   "name": "obsidian-claude-ide",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "license": "MIT",
   "author": "petersolopov",
   "repository": {
@@ -11,8 +11,9 @@
   "scripts": {
     "build": "node esbuild.config.js",
     "dev": "node esbuild.config.js --watch",
-    "test": "node --experimental-strip-types --import ./test/obsidian-loader.ts --test test/**/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "test": "node --import ./test/obsidian-loader.ts --test test/**/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "obsidian:install-plugin": "bash scripts/install-plugin.sh"
   },
   "devDependencies": {
     "@codemirror/state": "^6.0.0",
