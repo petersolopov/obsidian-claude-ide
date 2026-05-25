@@ -1,5 +1,6 @@
 node_modules/
 main.js
 *.js.map
-docs/
+docs/*
+!docs/spec/
 .env
