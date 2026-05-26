@@ -17,11 +17,7 @@ Install from Obsidian Community Plugins:
 3. Install and enable the plugin
 4. In Claude Code: run `/ide` → select Obsidian
 
-Manual fallback:
-
-1. Download `main.js` and `manifest.json` from the [latest release](https://github.com/petersolopov/obsidian-claude-ide/releases/latest)
-2. Create folder `claude-code-ide` in your vault's `.obsidian/plugins/` and put both files there
-3. Enable and connect as above
+Or install directly from the [community plugin page](https://community.obsidian.md/plugins/claude-code-ide)
 
 ## How it works
 
