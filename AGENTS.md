@@ -109,6 +109,11 @@ gh run watch
 gh release view X.Y.Z
 ```
 
+Inspect the release notes. If generated notes contain only the changelog
+link or are too sparse, edit the release body with concise user-facing
+`Changes` notes. Keep verification details in the internal release log,
+not in public release notes.
+
 Download release assets and verify provenance:
 
 ```bash

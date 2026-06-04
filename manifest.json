@@ -1,7 +1,7 @@
 {
   "id": "claude-code-ide",
   "name": "Claude Code IDE",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "minAppVersion": "1.5.0",
   "description": "Connect your vault to Claude Code. Shares selections and open files with the CLI.",
   "author": "petersolopov",
