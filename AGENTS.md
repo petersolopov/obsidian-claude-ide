@@ -69,6 +69,12 @@ Enable debug capture with `obsidian dev:debug on`. Check console for `[DEBUG] [c
 
 Work happens in `release/X.Y.Z` branch (create when first commit appears). Master always matches the latest release. After a release, never commit directly to master — create `release/X.Y.Z` for the next version first.
 
+Infrastructure-only maintenance that does not change release artifacts
+(`main.js`, `manifest.json`, package versions, or `versions.json`) may be
+committed directly to `master`. Examples: GitHub Actions maintenance and
+repository metadata. Do not bump versions or create a release tag for those
+changes.
+
 The release workflow runs on pushed tags. It uses Node 24, runs typecheck,
 tests, and a production build, creates artifact attestations for `main.js`
 and `manifest.json`, then creates the GitHub Release with official
