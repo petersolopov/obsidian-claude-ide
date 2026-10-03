@@ -30,6 +30,9 @@ Claude Code reads and edits files directly through the filesystem.
 The plugin provides editor context in the other direction — open files and selections.
 No diff view — edits appear directly in the file.
 
+A new session starts with the last note, as long as that note is on screen.
+Selections are passed from editing view only, not from reading view.
+
 ## Security
 
 - **Localhost only** — WebSocket server binds to `127.0.0.1`, no network exposure

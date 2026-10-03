@@ -83,8 +83,10 @@ export function buildAtMentionParams(data: SelectionData): AtMentionParams {
   };
 }
 
-export function getSelectionData(app: App): SelectionData | null {
-  const view = app.workspace.getActiveViewOfType(MarkdownView);
+export function getSelectionData(
+  app: App,
+  view = app.workspace.getActiveViewOfType(MarkdownView),
+): SelectionData | null {
   if (!view?.file) return null;
   const editor = view.editor;
   const basePath = getBasePath(app);

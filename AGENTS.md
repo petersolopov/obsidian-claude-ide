@@ -49,6 +49,14 @@ Plugin name: `Claude Code IDE`, ID: `claude-code-ide`. Renamed from "Obsidian ID
 
 Requires a second Claude Code session from the vault directory, connected via `/ide`.
 
+An agent can run these checks while the owner watches: it drives Obsidian
+through `obsidian vault=<test vault> eval` (open the note, set the selection,
+switch tabs; never a vault with real notes), starts `claude --ide` from the
+test vault directory in a terminal the owner can see, a tmux pane for example,
+and reads the `⧉` indicator there; the connection checks need no prompt to
+the model. Installing a build reloads the plugin and drops every connected
+session, so say so before each install.
+
 ```bash
 npm run typecheck
 npm test
@@ -58,6 +66,9 @@ npm run build && npm run obsidian:install-plugin
 Enable debug capture with `obsidian dev:debug on`. Check console for `[DEBUG] [claude-code-ide] vX.Y.Z listening on 127.0.0.1:PORT`.
 
 - `/ide` → select Obsidian
+- select text, leave Obsidian untouched, start a new session with `claude --ide` → `⧉ N lines selected` appears by itself once the prompt is ready
+- open a non-note view in a split so the note stays visible (outline, a terminal plugin) → a new session still gets the selection
+- cover the note with another tab, or close it → a new session gets nothing
 - select text → ask "what do I have selected?"
 - switch to another file → ask which file is open
 - Send to Claude (Cmd+P) without selection → sends whole file
