@@ -143,6 +143,10 @@ gh attestation verify "$RELEASE_DIR/manifest.json" -R petersolopov/obsidian-clau
 Compare release asset sha256 values against a clean production build from
 tag `X.Y.Z`.
 
+Verify only the downloaded assets. Obsidian appends `/* nosourcemap */` to
+`main.js` when it installs a community plugin, so the installed file never
+matches the attestation or the asset hash.
+
 After the Obsidian Community Plugin directory indexes the release, install
 or update the plugin from Community Plugins in the test vault. Verify the
 installed manifest reports `X.Y.Z`:
