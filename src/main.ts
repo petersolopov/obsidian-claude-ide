@@ -1,4 +1,4 @@
-import { Plugin, FileSystemAdapter } from "obsidian";
+import { Plugin, FileSystemAdapter, MarkdownView } from "obsidian";
 import { log } from "./log.ts";
 import { EditorView, ViewUpdate } from "@codemirror/view";
 import { randomUUID } from "node:crypto";
@@ -16,6 +16,7 @@ export default class ObsidianIdePlugin extends Plugin {
   private port = 0;
   private latestSelection: SelectionData | null = null;
   private prevState: string | null = null;
+  private lastMarkdownView: MarkdownView | null = null;
   // Obsidian exposes activeWindow as a global; the npm types do not export it as ESM.
   private broadcastTimer: ReturnType<typeof activeWindow.setTimeout> | null = null;
   private broadcastTimerWindow: Window | null = null;
@@ -36,6 +37,12 @@ export default class ObsidianIdePlugin extends Plugin {
           version: this.manifest.version,
           latestSelection: this.latestSelection,
         }),
+      onClientReady: (sendToClient) => {
+        const selection = this.getLastMarkdownViewSelection();
+        if (selection) sendToClient(selectionChangedMessage(selection));
+        // a session that got nothing must hear the next editor event even if nothing changed
+        else this.prevState = null;
+      },
     });
 
     this.port = await this.server.start();
@@ -47,8 +54,12 @@ export default class ObsidianIdePlugin extends Plugin {
       authToken,
     });
 
+    // at startup the tabs come back after plugins load, so the note open then is seen here
+    this.app.workspace.onLayoutReady(() => this.rememberMarkdownView());
+
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", () => {
+        this.rememberMarkdownView();
         this.scheduleBroadcast();
       }),
     );
@@ -99,6 +110,14 @@ export default class ObsidianIdePlugin extends Plugin {
     }
   }
 
+  // the main area's last leaf, not the active one: a sidebar terminal may be active, also when the
+  // plugin loads; a terminal, graph or empty tab is no note, so the last note stays remembered.
+  // Obsidian does not restore activeTime, so after a restart the first visible leaf counts as the last
+  private rememberMarkdownView() {
+    const view = this.app.workspace.getMostRecentLeaf()?.view;
+    if (view instanceof MarkdownView) this.lastMarkdownView = view;
+  }
+
   private scheduleBroadcast() {
     if (this.broadcastTimer !== null) {
       this.broadcastTimerWindow?.clearTimeout(this.broadcastTimer);
@@ -127,19 +146,31 @@ export default class ObsidianIdePlugin extends Plugin {
     if (stateKey === this.prevState) return;
     this.prevState = stateKey;
 
-    this.server?.broadcast({
-      jsonrpc: "2.0",
-      method: "selection_changed",
-      params: {
-        text: data.selection.text,
-        filePath: data.filePath,
-        fileUrl: "file://" + data.filePath,
-        selection: {
-          start: data.selection.start,
-          end: data.selection.end,
-          isEmpty: data.selection.isEmpty,
-        },
-      },
-    });
+    this.server?.broadcast(selectionChangedMessage(data));
   }
+
+  private getLastMarkdownViewSelection(): SelectionData | null {
+    const view =
+      this.app.workspace.getActiveViewOfType(MarkdownView) ?? this.lastMarkdownView;
+    if (!view) return null;
+    if (!view.containerEl.isShown()) return null;
+    return getSelectionData(this.app, view);
+  }
+}
+
+function selectionChangedMessage(data: SelectionData) {
+  return {
+    jsonrpc: "2.0",
+    method: "selection_changed",
+    params: {
+      text: data.selection.text,
+      filePath: data.filePath,
+      fileUrl: "file://" + data.filePath,
+      selection: {
+        start: data.selection.start,
+        end: data.selection.end,
+        isEmpty: data.selection.isEmpty,
+      },
+    },
+  };
 }

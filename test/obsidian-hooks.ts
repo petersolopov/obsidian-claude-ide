@@ -32,7 +32,7 @@ export function load(url: string, context: LoadContext, nextLoad: NextLoad) {
   if (url === "obsidian://stub") {
     return {
       source:
-        "export class TFile {} export class MarkdownView {} export const activeWindow = { setTimeout: globalThis.setTimeout.bind(globalThis), clearTimeout: globalThis.clearTimeout.bind(globalThis), setInterval: globalThis.setInterval.bind(globalThis), clearInterval: globalThis.clearInterval.bind(globalThis) }",
+        "export class TFile {} export class MarkdownView {} export class FileSystemAdapter {} export class Plugin { constructor(app, manifest) { this.app = app; this.manifest = manifest; } registerEvent() {} registerDomEvent() {} registerEditorExtension() {} addCommand() {} } export const activeWindow = { setTimeout: globalThis.setTimeout.bind(globalThis), clearTimeout: globalThis.clearTimeout.bind(globalThis), setInterval: globalThis.setInterval.bind(globalThis), clearInterval: globalThis.clearInterval.bind(globalThis) }",
       format: "module",
       shortCircuit: true,
     };

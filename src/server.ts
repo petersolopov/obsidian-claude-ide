@@ -17,10 +17,17 @@ export interface IdeServer {
   broadcast(data: object): void;
 }
 
+type SendToClient = (message: object) => void;
+
 interface ServerOptions {
   authToken: string;
   onMessage(msg: RpcMessage): Record<string, unknown>;
+  // fires 500 ms after the client's ide_connected: Claude Code registers its notification
+  // handlers only after sending it and drops earlier ones; the VS Code extension waits 500 ms too
+  onClientReady?(sendToClient: SendToClient): void;
 }
+
+const CLIENT_READY_DELAY_MS = 500;
 
 export function createIdeServer(options: ServerOptions): IdeServer {
   const clients = new Set<Client>();
@@ -70,6 +77,18 @@ export function createIdeServer(options: ServerOptions): IdeServer {
     socket.on("error", (e) => { log("error", "client error:", e.message); clients.delete(client); });
   }
 
+  function scheduleClientReady(client: Client) {
+    activeWindow.setTimeout(() => {
+      if (!clients.has(client)) return;
+      options.onClientReady?.((message) => {
+        if (!client.socket.writable) return;
+        const text = JSON.stringify(message);
+        log("debug", "send:", text);
+        client.socket.write(createFrame(OPCODE.TEXT, text));
+      });
+    }, CLIENT_READY_DELAY_MS);
+  }
+
   function processFrames(client: Client) {
     while (true) {
       const frame = parseFrame(client.buffer);
@@ -99,6 +118,7 @@ export function createIdeServer(options: ServerOptions): IdeServer {
           log("debug", "recv:", text);
           const msg = JSON.parse(text) as RpcMessage;
           if (msg.id === undefined || msg.id === null) {
+            if (msg.method === "ide_connected") scheduleClientReady(client);
             log("debug", "skip notification (no id):", msg.method);
             continue;
           }
