@@ -4,7 +4,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Socket } from "node:net";
-import type { App } from "obsidian";
+import { MarkdownView, type App } from "obsidian";
 import { OPCODE } from "../src/websocket.ts";
 import { createMaskedFrame, connectWebSocket, waitForFrame } from "./ws-client.ts";
 
@@ -36,7 +36,7 @@ function makeView(path: string, range: Range) {
       },
     },
   };
-  return view;
+  return Object.setPrototypeOf(view, MarkdownView.prototype) as typeof view;
 }
 
 type FakeView = ReturnType<typeof makeView>;
@@ -44,12 +44,16 @@ type FakeView = ReturnType<typeof makeView>;
 const workspace = {
   handlers: new Map<string, () => void>(),
   activeView: null as FakeView | null,
+  mainAreaLeaf: null as { view: FakeView } | null,
   on(name: string, handler: () => void) {
     this.handlers.set(name, handler);
     return {};
   },
   getActiveViewOfType() {
     return this.activeView;
+  },
+  getMostRecentLeaf() {
+    return this.mainAreaLeaf;
   },
   onLayoutReady(callback: () => void) {
     callback();
@@ -63,6 +67,7 @@ const app = {
 
 function activate(view: FakeView | null) {
   workspace.activeView = view;
+  if (view) workspace.mainAreaLeaf = { view };
   workspace.handlers.get("active-leaf-change")?.();
 }
 
@@ -87,6 +92,8 @@ function silenceAfter(ms: number) {
   return new Promise<string>((resolve) => setTimeout(() => resolve("silent"), ms));
 }
 
+after(() => rmSync(home, { recursive: true, force: true }));
+
 describe("new session gets the last editor's selection", () => {
   const plugin = new ObsidianIdePlugin(app, { version: "0.0.0-test" } as never);
   const sockets: Socket[] = [];
@@ -94,7 +101,6 @@ describe("new session gets the last editor's selection", () => {
   after(() => {
     for (const socket of sockets) socket.destroy();
     plugin.onunload();
-    rmSync(home, { recursive: true, force: true });
   });
 
   it("sends the note open before load, read from the pane used last, while that pane is on screen", { timeout: 10_000 }, async () => {
@@ -104,9 +110,11 @@ describe("new session gets the last editor's selection", () => {
       text: "two\nthree",
     });
     workspace.activeView = noteA;
+    workspace.mainAreaLeaf = { view: noteA };
     await plugin.onload();
 
-    activate(null); // a terminal tab takes focus, no editor event happened in between
+    workspace.mainAreaLeaf = { view: {} as FakeView }; // a terminal tab takes focus
+    activate(null); // no editor event happened in between
     const first = await connectSession(sockets);
     assert.ok(first);
     const message = JSON.parse(first.payload.toString());
@@ -131,7 +139,7 @@ describe("new session gets the last editor's selection", () => {
 
     activate(paneB); // the plugin broadcasts this state and remembers it as already sent
     await silenceAfter(150);
-    paneB.shown = false; // covered by another tab, or closed
+    paneB.shown = false; // closed, or covered by a terminal tab
     activate(null);
     const pending = connectSession(sockets);
     const third = await Promise.race([pending, silenceAfter(800)]);
@@ -144,5 +152,32 @@ describe("new session gets the last editor's selection", () => {
     const late = await pending;
     assert.ok(late);
     assert.strictEqual(JSON.parse(late.payload.toString()).params.text, "ONE");
+  });
+});
+
+describe("new session after a load while a terminal leaf is active", () => {
+  const plugin = new ObsidianIdePlugin(app, { version: "0.0.0-test" } as never);
+  const sockets: Socket[] = [];
+
+  after(() => {
+    for (const socket of sockets) socket.destroy();
+    plugin.onunload();
+  });
+
+  it("sends the note used last in the main area", { timeout: 10_000 }, async () => {
+    const note = makeView("c.md", {
+      from: { line: 3, ch: 0 },
+      to: { line: 3, ch: 4 },
+      text: "four",
+    });
+    workspace.activeView = null;
+    workspace.mainAreaLeaf = { view: note };
+    await plugin.onload();
+
+    const frame = await connectSession(sockets);
+    assert.ok(frame);
+    const message = JSON.parse(frame.payload.toString());
+    assert.strictEqual(message.params.filePath, "/vault/c.md");
+    assert.strictEqual(message.params.text, "four");
   });
 });

@@ -59,6 +59,7 @@ export default class ObsidianIdePlugin extends Plugin {
 
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", () => {
+        this.rememberMarkdownView();
         this.scheduleBroadcast();
       }),
     );
@@ -109,16 +110,15 @@ export default class ObsidianIdePlugin extends Plugin {
     }
   }
 
-  // a terminal, graph or empty tab has no MarkdownView: then the last one seen stays remembered
+  // the main area's last leaf, not the active one: a sidebar terminal may be active, also when the
+  // plugin loads; a terminal, graph or empty tab is no note, so the last note stays remembered.
+  // Obsidian does not restore activeTime, so after a restart the first visible leaf counts as the last
   private rememberMarkdownView() {
-    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-    if (view) this.lastMarkdownView = view;
+    const view = this.app.workspace.getMostRecentLeaf()?.view;
+    if (view instanceof MarkdownView) this.lastMarkdownView = view;
   }
 
   private scheduleBroadcast() {
-    // remember now: 100 ms later, when the broadcast reads, a terminal tab may be active
-    this.rememberMarkdownView();
-
     if (this.broadcastTimer !== null) {
       this.broadcastTimerWindow?.clearTimeout(this.broadcastTimer);
     }
@@ -153,7 +153,8 @@ export default class ObsidianIdePlugin extends Plugin {
     const view =
       this.app.workspace.getActiveViewOfType(MarkdownView) ?? this.lastMarkdownView;
     if (!view) return null;
-    return view.containerEl.isShown() ? getSelectionData(this.app, view) : null;
+    if (!view.containerEl.isShown()) return null;
+    return getSelectionData(this.app, view);
   }
 }
 

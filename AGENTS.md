@@ -68,7 +68,8 @@ Enable debug capture with `obsidian dev:debug on`. Check console for `[DEBUG] [c
 - `/ide` → select Obsidian
 - select text, leave Obsidian untouched, start a new session with `claude --ide` → `⧉ N lines selected` appears by itself once the prompt is ready
 - open a non-note view in a split so the note stays visible (outline, a terminal plugin) → a new session still gets the selection
-- cover the note with another tab, or close it → a new session gets nothing
+- make a sidebar view active with one note on screen, then reload the plugin, and once more reload the vault (`obsidian reload vault=<test vault>`, the same plugin load as an Obsidian restart) → a new session gets the note without a click
+- cover the note with a terminal or empty tab → a new session gets nothing
 - select text → ask "what do I have selected?"
 - switch to another file → ask which file is open
 - Send to Claude (Cmd+P) without selection → sends whole file
