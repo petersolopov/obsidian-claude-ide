@@ -17,9 +17,7 @@ export default class ObsidianIdePlugin extends Plugin {
   private latestSelection: SelectionData | null = null;
   private prevState: string | null = null;
   private lastMarkdownView: MarkdownView | null = null;
-  // Obsidian exposes activeWindow as a global; the npm types do not export it as ESM.
-  private broadcastTimer: ReturnType<typeof activeWindow.setTimeout> | null = null;
-  private broadcastTimerWindow: Window | null = null;
+  private broadcastTimer: number | null = null;
 
   async onload() {
     cleanStaleLockFiles();
@@ -100,9 +98,8 @@ export default class ObsidianIdePlugin extends Plugin {
 
   onunload() {
     if (this.broadcastTimer !== null) {
-      this.broadcastTimerWindow?.clearTimeout(this.broadcastTimer);
+      window.clearTimeout(this.broadcastTimer);
       this.broadcastTimer = null;
-      this.broadcastTimerWindow = null;
     }
     this.server?.stop();
     if (this.port) {
@@ -120,13 +117,10 @@ export default class ObsidianIdePlugin extends Plugin {
 
   private scheduleBroadcast() {
     if (this.broadcastTimer !== null) {
-      this.broadcastTimerWindow?.clearTimeout(this.broadcastTimer);
+      window.clearTimeout(this.broadcastTimer);
     }
-    const timerWindow = activeWindow;
-    this.broadcastTimerWindow = timerWindow;
-    this.broadcastTimer = timerWindow.setTimeout(() => {
+    this.broadcastTimer = window.setTimeout(() => {
       this.broadcastTimer = null;
-      this.broadcastTimerWindow = null;
       this.broadcastSelection();
     }, 100);
   }
