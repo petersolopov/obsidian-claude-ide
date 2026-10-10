@@ -102,6 +102,11 @@ Commit the release candidate.
 Before pushing the release tag, run the full regression checklist above
 against the bumped release candidate.
 
+Maintainer-only: push the release branch and press Review branch on the
+plugin's page in the Obsidian community dashboard. The review must list no
+source code warnings. The Direct Filesystem Access warning is expected: the
+lock files in `~/.claude/ide/` are how Claude Code finds the plugin.
+
 Then run a production build and install it into the development vault:
 
 ```bash
