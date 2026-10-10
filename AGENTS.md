@@ -73,7 +73,7 @@ Enable debug capture with `obsidian dev:debug on`. Check console for `[DEBUG] [c
 - select text → ask "what do I have selected?"
 - switch to another file → ask which file is open
 - Send to Claude (Cmd+P) without selection → sends whole file
-- Send to Claude with selection → sends file with `:L` line number
+- Send to Claude with selection → sends file with `#L` line number, e.g. `@note.md#L3`
 - open file with spaces in name → select text → verify path is correct
 - reload plugin → verify old lock file deleted, new one created with `0o600` permissions
 
@@ -101,6 +101,11 @@ Commit the release candidate.
 
 Before pushing the release tag, run the full regression checklist above
 against the bumped release candidate.
+
+Maintainer-only: push the release branch and press Review branch on the
+plugin's page in the Obsidian community dashboard. The review must list no
+source code warnings. The Direct Filesystem Access warning is expected: the
+lock files in `~/.claude/ide/` are how Claude Code finds the plugin.
 
 Then run a production build and install it into the development vault:
 

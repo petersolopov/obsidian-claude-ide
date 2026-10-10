@@ -12,11 +12,10 @@ import {
 } from "./ws-client.ts";
 
 const AUTH_TOKEN = "test-token-123";
-const originalActiveWindow = activeWindow;
+const originalWindow = window;
 
-function setActiveWindowForTest(window: Window) {
-  (globalThis as typeof globalThis & { activeWindow: Window }).activeWindow =
-    window;
+function setWindowForTest(timerWindow: Window) {
+  (globalThis as unknown as { window: Window }).window = timerWindow;
 }
 
 function createIntervalWindow() {
@@ -49,7 +48,7 @@ describe("ide server", () => {
     }
     sockets = [];
     server?.stop();
-    setActiveWindowForTest(originalActiveWindow);
+    setWindowForTest(originalWindow);
   });
 
   it("accepts WebSocket connection and responds to initialize RPC", async () => {
@@ -200,10 +199,9 @@ describe("ide server", () => {
     assert.strictEqual(frame.payload.toString(), "heartbeat");
   });
 
-  it("clears ping interval with the window that created it", async () => {
-    const firstWindow = createIntervalWindow();
-    const secondWindow = createIntervalWindow();
-    setActiveWindowForTest(firstWindow.window);
+  it("clears the ping interval on stop", async () => {
+    const timerWindow = createIntervalWindow();
+    setWindowForTest(timerWindow.window);
 
     server = createIdeServer({
       authToken: AUTH_TOKEN,
@@ -211,12 +209,10 @@ describe("ide server", () => {
     });
 
     await server.start();
-    setActiveWindowForTest(secondWindow.window);
     server.stop();
 
-    assert.deepStrictEqual(firstWindow.intervals, [1]);
-    assert.deepStrictEqual(firstWindow.clearedIntervals, [1]);
-    assert.deepStrictEqual(secondWindow.clearedIntervals, []);
+    assert.deepStrictEqual(timerWindow.intervals, [1]);
+    assert.deepStrictEqual(timerWindow.clearedIntervals, [1]);
   });
 
   it("rejects connection with wrong auth token", async () => {
