@@ -181,3 +181,19 @@ describe("new session after a load while a terminal leaf is active", () => {
     assert.strictEqual(message.params.text, "four");
   });
 });
+
+describe("lock file workspace folders", () => {
+  const plugin = new ObsidianIdePlugin(app, { version: "0.0.0-test" } as never);
+
+  after(() => plugin.onunload());
+
+  it("lists extra folders from data.json after the vault", async () => {
+    plugin.loadData = async () => ({ extraWorkspaceFolders: ["/project"] });
+    await plugin.onload();
+
+    const lockDir = join(home, ".claude", "ide");
+    const [file] = readdirSync(lockDir).filter((f) => f.endsWith(".lock"));
+    const lock = JSON.parse(readFileSync(join(lockDir, file), "utf-8"));
+    assert.deepStrictEqual(lock.workspaceFolders, ["/vault", "/project"]);
+  });
+});
