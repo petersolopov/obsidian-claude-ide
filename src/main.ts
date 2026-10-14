@@ -45,10 +45,14 @@ export default class ObsidianIdePlugin extends Plugin {
 
     this.port = await this.server.start();
 
+    // extra dirs (from data.json) so a claude started outside the vault still lists Obsidian in /ide
+    const extraWorkspaceFolders: string[] =
+      ((await this.loadData()) ?? {}).extraWorkspaceFolders ?? [];
+
     createLockFile({
       port: this.port,
       pid: process.pid,
-      workspaceFolders: [basePath],
+      workspaceFolders: [basePath, ...extraWorkspaceFolders],
       authToken,
     });
 
